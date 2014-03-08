@@ -1,0 +1,65 @@
+//   if (millis() > lastSendCommand + 200) {
+//      motorBrake(motor1);
+//      motorBrake(motor2);       
+//   }
+//   
+   
+   
+   
+   
+  
+//  digitalWrite(pinBIN1, HIGH);
+//  digitalWrite(pinBIN2, LOW);
+//  digitalWrite(pinPWMB, HIGH);
+
+//  delay(5000);
+
+
+  /*
+  //Drive both motors CW, full speed
+  motorDrive(motor1, turnCW, 255);
+  motorDrive(motor2, turnCW, 255);
+  delay(2000);
+  
+  //Keep driving for 2 secs
+   delay(2000);
+   
+   //Turn towards motor1: Stop Motor1, slow Motor2
+   motorStop(motor1);
+   motorDrive(motor2, turnCW, 192);
+   
+   //Keep turning for 2 secs
+   delay(2000);
+   
+   //Turn in opposite direction: Stop Motor2, slow Motor1
+   motorDrive(motor1, turnCW, 192);
+   delay(250);
+   motorStop(motor2);
+   
+   //Keep turning for 2 secs
+   delay(2000);
+   
+   //Straighten up
+   motorDrive(motor2, turnCW, 192);
+   delay(500);
+   
+   //Put motors into Standby
+   motorsStandby();
+   delay(1000);
+   
+   //Do a tight turn towards motor1: Motor2 forward, Motor1 reverse
+   motorDrive(motor1, turnCCW, 192);
+   motorDrive(motor2, turnCW, 192);
+   
+   //Keep turning for 2 secs
+   delay(2000);
+   
+   
+   //Apply Brakes, then into Standby
+   motorBrake(motor1);
+   motorBrake(motor2);
+   motorsStandby();
+   
+   //Stand still for 5 secs, then we do it all over again...
+   delay(5000);
+   */
