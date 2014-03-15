@@ -1,3 +1,5 @@
+#include <digitalWriteFast.h>
+
 
 /*
 Sample Code to run the Sparkfun TB6612FNG 1A Dual Motor Driver using Arduino UNO R3
@@ -29,6 +31,9 @@ Sample Code to run the Sparkfun TB6612FNG 1A Dual Motor Driver using Arduino UNO
  
  
  */
+
+//define the radius of the wheel
+#define RADIUS_WHEEL 5 //5 cm
 
 //Define the Pins
 
@@ -62,6 +67,26 @@ int encoderA1 = 0;
 int encoderA2 = 0;
 int encoderB1 = 0;
 int encoderB2 = 0;
+
+int prev_encoderA1 = 0;
+int prev_encoderA2 = 0;
+int prev_encoderB1 = 0;
+int prev_encoderB2 = 0;
+
+int rotate_encoderA1 = 0;
+int rotate_encoderA2 = 0;
+int rotate_encoderB1 = 0;
+int rotate_encoderB2 = 0;
+
+int time_encoderA1 = 0;
+int time_encoderA2 = 0;
+int time_encoderB1 = 0;
+int time_encoderB2 = 0;
+
+int speed_encoderA1 = 0;
+int speed_encoderA2 = 0;
+int speed_encoderB1 = 0;
+int speed_encoderB2 = 0;
 
 void setup()
 {
@@ -128,10 +153,10 @@ void loop()
 }
 
 void handleEncoder() {
-  encoderA1 = digitalRead(pinEncoderA1);
-  encoderA2 = digitalRead(pinEncoderA2);
-  encoderB1 = digitalRead(pinEncoderB1);
-  encoderB2 = digitalRead(pinEncoderB2);
+  encoderA1 = (int) digitalRead(pinEncoderA1);
+  encoderA2 = (int) digitalRead(pinEncoderA2);
+  encoderB1 = (int) digitalRead(pinEncoderB1);
+  encoderB2 = (int) digitalRead(pinEncoderB2);
   
   Serial.println("EncoderA1:" + String(encoderA1));
   Serial.println("EncoderA2:" + String(encoderA2));
@@ -140,6 +165,47 @@ void handleEncoder() {
   Serial.println();
   
   
+  if (prev_encoderA1 == 0 && encoderA1) { //transition from low to high
+    rotate_encoderA1 += 1; 
+    if (rotate_encoderA1 == 2) { //full rotation
+      rotate_encoderA1 = 0;
+      speed_encoderA1 = 2*3.14*RADIUS_WHEEL / (millis() - time_encoderA1);
+      time_encoderA1 = millis();
+    }  
+  }
+  
+  if (prev_encoderA2 == 0 && encoderA2) { //transition from low to high
+    rotate_encoderA2 += 1; 
+    if (rotate_encoderA2 == 2) { //full rotation
+      rotate_encoderA2 = 0;
+      speed_encoderA2 = 2*3.14*RADIUS_WHEEL / (millis() - time_encoderA2);
+      time_encoderA2 = millis();
+    }  
+  }
+  
+  if (prev_encoderB1 == 0 && encoderB1) { //transition from low to high
+    rotate_encoderB1 += 1; 
+    if (rotate_encoderB1 == 2) { //full rotation
+      rotate_encoderB1 = 0;
+      speed_encoderB1 = 2*3.14*RADIUS_WHEEL / (millis() - time_encoderB1);
+      time_encoderB1 = millis();
+    }  
+  }
+  
+  if (prev_encoderB2 == 0 && encoderB2) { //transition from low to high
+    rotate_encoderB2 += 1; 
+    if (rotate_encoderB2 == 2) { //full rotation
+      rotate_encoderB2 = 0;
+      speed_encoderB2 = 2*3.14*RADIUS_WHEEL / (millis() - time_encoderB2);
+      time_encoderB2 = millis();
+    }  
+  }
+  
+  prev_encoderA1 = encoderA1;
+  prev_encoderA2 = encoderA2;
+  prev_encoderB1 = encoderB1;
+  prev_encoderB1 = encoderB2;
+ 
 }
 
 void motorDrive(boolean motorNumber, boolean motorDirection, int motorSpeed)
