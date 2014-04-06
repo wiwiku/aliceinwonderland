@@ -59,7 +59,6 @@ void loop() {
     int row = x; 
     int col = y;
     if (!hasWall) {
-      // TODO deal with edges and corners (probably in wallExists)
       getAdjacentCell(row, col, dir);
 
       int val = getFFVal(row, col);

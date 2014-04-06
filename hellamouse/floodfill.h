@@ -6,6 +6,7 @@ int minNeighbor(int x, int y);
 //int calculateWallIndex(int row, int col, int dir);
 int getWalls(int row, int col);
 bool wallExists(int row, int col, int dir);
+bool newWallExists(int newWalls, int dir);
 void setWalls(int row, int col, int walls);
 void getAdjacentCell(int &row, int &col, int dir);
 int getFFVal(int row, int col);
