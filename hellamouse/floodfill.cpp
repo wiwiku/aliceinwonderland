@@ -89,7 +89,7 @@ void setWalls(int row, int col, int walls) {
 void getAdjacentCell(int &row, int &col, int dir) {
   //int subject = corner == 3 ? 1 : -1;
   //TODO: check sides - what if there is no adjacent cell?
-  //technically should not be called when there is a wall on that side.
+  //technically should not be called when there is a wall on that side
   switch(dir) {
   case NORTH: 
     row = row + 1; 
@@ -139,7 +139,7 @@ int minNeighbor(int row, int col) {
   return small;
 }
 
-//Update values taht need to be updated.
+/* Update values that need to be updated */
 void updateFloodfill(int x, int y, int newWalls) {
   int row, col;
   queue.push(rowColToI(x, y));
@@ -207,7 +207,7 @@ void updateFloodfill(int x, int y, int newWalls) {
   }
 }
 
-//initial starting maze values.
+/* Initial starting maze values */
 void initializeFloodfill() {
   for(int i = 0; i < LENGTH; i++) {
     for(int j = 0; j < LENGTH; j++) {

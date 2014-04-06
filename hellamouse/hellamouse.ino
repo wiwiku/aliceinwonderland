@@ -17,7 +17,6 @@ boolean done = false;
 void setup() {
   Serial.begin(9600);
   initializeThings();
-
   boolean north, east, south, west;
   senseWalls();
 }

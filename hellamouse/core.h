@@ -1,4 +1,4 @@
-
+#define DEBUG 0
 #define LENGTH 16
 #define AREA 256
 
