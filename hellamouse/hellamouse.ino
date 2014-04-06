@@ -5,13 +5,12 @@
 #include "motors.h"
 
 //memory
-int prevCol = 0;
-int prevRow = 0;
 int x = 0;
 int y = 0;
-int curDirection = NORTH;
+int curDir = NORTH;
 int walls = 0;
 int dir = NORTH;
+int nextRow, nextCol, nextVal;
 
 boolean done = false;
 
@@ -28,12 +27,7 @@ void initializeThings() {
 }
 
 void loop() {
-  //get what we have stored for the walls
-  //int walls;
-
   walls = getWalls(x,y);
-
-  int nextRow, nextCol, nextVal;
 
   //Check for goal state
   if (getFFVal(x, y) == 0) {
@@ -42,10 +36,10 @@ void loop() {
   }
 
   // If only one possible move, move.
-  if ((ALLWALLS - walls) == curDirection) {
-    //move straight
+  if ((ALLWALLS - walls) == curDir) {
+    moveTo(x, y, curDir);
     Serial.println("Move straight");
-    //next iteration of this loop() method
+    return;
   } 
 
   //sense what walls are surrounding the mouse
@@ -71,20 +65,19 @@ void loop() {
       int val = getFFVal(row, col);
 
       // Go straight if tie and if possible or set to smallest value
-      if (val == nextVal && dir == curDirection || val < nextVal) {
+      if (val == nextVal && dir == curDir || val < nextVal) {
         nextRow = row;
         nextCol = col;
         nextVal = val;
       }
     }
 
-    curDirection = x == nextCol? (y > nextRow ? NORTH:SOUTH) : 
+    curDir = x == nextCol? (y > nextRow ? NORTH:SOUTH) : 
     (x > nextCol ? EAST:WEST);
     x = nextCol; 
     y = nextRow;
   }
 
-  //which direction needs to face and coordinates to move to
-  moveTo(x,y, curDirection);
+  moveTo(x,y, curDir);
 }
 
