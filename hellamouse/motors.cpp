@@ -1,5 +1,6 @@
-//TODO: deal with multiple steps or 45 degrees
+
+
+//TODO: figure out when to take multiple steps or 45 degree turns
 void moveTo(int row, int col, int dir){
-  Serial.print("Move to ");
-  Serial.println(row + ", " + col);
+
 }

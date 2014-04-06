@@ -1,3 +1,11 @@
 void initializeFloodfill(void);
-void updateFloodfill(void);
-
+void updateFloodfill(int row, int col, int newWalls);
+int rowColToI(int row, int col);
+void iToRowCol(int &row, int &col, int i);
+int minNeighbor(int x, int y);
+//int calculateWallIndex(int row, int col, int dir);
+int getWalls(int row, int col);
+bool wallExists(int row, int col, int dir);
+void setWalls(int row, int col, int walls);
+void getAdjacentCell(int &row, int &col, int dir);
+int getFFVal(int row, int col);
