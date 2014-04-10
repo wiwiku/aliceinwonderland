@@ -1,6 +1,7 @@
 #include <QueueList.h>
 #include "core.h"
 
+/* row is the x-value, col is the y-value */
 int floodfillArr[LENGTH][LENGTH];
 
 /* queue stores points that need to be rechecked in updating floodfill
@@ -8,81 +9,62 @@ int floodfillArr[LENGTH][LENGTH];
   array index (last 8 bits) */
 QueueList <int> queue;
 
-/* Returns the floodfill value at the specified point */
-int getFFVal(int row, int col) {
+/* Returns the stored value at the specified point */
+int getArrVal(int row, int col) {
   return floodfillArr[row][col];
 }
 
-/* Sets the floodfill value at the specified point */
-void setFFVal(int row, int col, int val){
+/* Sets the stored value at the specified point */
+void setArrVal(int row, int col, int val){
   floodfillArr[row][col] = val;
-}
-
-/* Sets the last half of the floodfill value (the computed score) */
-void setFFScore(int row, int col, int score) {
-  setFFVal(row, col, (score & 255) | (getFFVal(row, col) & (255 << 8)));
-}
-
-/* Calculates the index if the 2D array were flattened */
-int rowColToI(int row, int col) {
-  return row * LENGTH + col;
-}
-
-/* Sets row and col to the values in a 2D array given the index in a 1D array */
-void iToRowCol(int &row, int &col, int i) {
-  row = (int) i / LENGTH;
-  col = 0;
 }
 
 /* Returns the first 8 bits of the value at the specified point */
 int getWalls(int row, int col) {
-  return (getFFVal(row, col) >> 8) & 255;
+  return (getArrVal(row, col) >> 8) & 15;
 }
 
-/*int calculateWallIndex(int row, int col, int dir) {
- int index;
- int corner;
- 
- // Up or down
- if(dir == 0 || dir == 2) {
- index = rowColToI(
- dir == 0 ? row : row - 1, col
- );
- }
- 
- // Right or left
- else if(dir == 1 || dir == 3) {
- index = colRowtoZ(
- corner == 3 ? 
- (dir == 1 ? col : col - 1) : 
- (dir == 3 ? col : col - 1),
- row
- );
- }
- 
- return index;
- }
- */
+/* Returns the flood fill score */
+int getFFScore(int row, int col) {
+  return floodfillArr[row][col] & 255;
+}
+
+/* Sets the last half of the floodfill value (the computed score) */
+void setFFScore(int row, int col, int score) {
+  setArrVal(row, col, (score & 255) | (getWalls(row, col) << 8));
+}
+
+/* Sets wall value [0-15] of this coordinate point */
+void addNewWalls(int row, int col, int walls) {
+  if (walls >= 0 && walls < 16) {
+    setArrVal(row, col, (getFFScore(row, col) | ((getWalls(row,col) | walls) << 8)));
+  }
+}
+
+/* Calculates the index if the 2D array were flattened */
+int rowColToI(int row, int col) {
+  return row + (LENGTH * col);
+}
+
+/* Sets row and col to the values in a 2D array given the index in a 1D array */
+void iToRowCol(int &row, int &col, int i) {
+  col = (int) i / LENGTH;
+  row = i - (col*16);
+}
 
 /* Check if a wall in the given direction exists */
 bool wallExists(int row, int col, int dir) {
-  if (row <= 0 || col <= 0 || row >= LENGTH-1 || col >= LENGTH -1) {
+  if ((row <= 0 && (dir==WEST)) || (col <= 0 && (dir == SOUTH)) || (row >= LENGTH-1 && dir == EAST) || (col >= LENGTH -1 && dir == NORTH)) {
     return true;
-  } else if (getWalls(row, col) & dir > 0){
+  } else if ((getWalls(row, col) & dir) == dir){
     return true;
   }
-  
   return false;
 }
 
 /* Check if a new wall in the given direction exists */
 bool newWallExists(int newWalls, int dir) {
-  return newWalls & (dir & 255) > 0;
-}
-
-/* Sets wall value of this coordinate point */
-void setWalls(int row, int col, int walls) {
-  setFFVal(row, col, (getFFVal(row, col) & (255 << 8)) | (walls << 8));
+  return (newWalls & (dir & 15)) > 0;
 }
 
 /* Set row and col to the coordinates in that direction */
@@ -92,50 +74,46 @@ void getAdjacentCell(int &row, int &col, int dir) {
   //technically should not be called when there is a wall on that side
   switch(dir) {
   case NORTH: 
-    row = row + 1; 
-    break;
-  case EAST: 
     col = col + 1; 
     break;
+  case EAST: 
+    row = row + 1; 
+    break;
   case SOUTH: 
-    row = row - 1; 
+    col = col - 1; 
     break;
   case WEST: 
-    col = col - 1; 
+    row = row - 1; 
     break;
   }
 }
 
 /* Return value of smallest open neighbor */
 int minNeighbor(int row, int col) {
-  int small = 300; //val should never be greater than 255
+  int small = getFFScore(row, col); //there should be some neighbor smaller than it
   if(!wallExists(row, col, NORTH)) {
-    if (getFFVal(row+1, col) < small) {
-      small = getFFVal(row+1, col);
+    if (getFFScore(row+1, col) < small) {
+      small = getFFScore(row+1, col);
     }
   }
-
   // Check the cel to the east
   if(!wallExists(row, col, EAST)) {
-    if (getFFVal(row, col+1) < small) {
-      small = getFFVal(row, col+1);
+    if (getFFScore(row, col+1) < small) {
+      small = getFFScore(row, col+1);
     }
   }
-
   // Check the cell to the south
   if(!wallExists(row, col, SOUTH)) {
-    if (getFFVal(row-1, col) < small) {
-      small = getFFVal(row-1, col);
+    if (getFFScore(row-1, col) < small) {
+      small = getFFScore(row-1, col);
     }
   }
-
   // Check the cell to the west
   if(!wallExists(row, col, WEST)) {
-    if (getFFVal(row, col-1) < small) {
-      small = getFFVal(row, col-1);
+    if (getFFScore(row, col-1) < small) {
+      small = getFFScore(row, col-1);
     }
   }
-  
   return small;
 }
 
@@ -146,22 +124,26 @@ void updateFloodfill(int x, int y, int newWalls) {
 
   //for each new wall, add the adjacent cell to the queue
   // Check the cell to the north
-  if(newWallExists(newWalls, NORTH) || getFFVal(row+1, col) == UNDEFINED) {
+  if(newWallExists(newWalls, NORTH) || getArrVal(row+1, col) == UNDEFINED) {
+    setArrVal(row+1, col, 0);
     queue.push(rowColToI(row+1, col));
   }
 
   // Check the cel to the east
-  if(newWallExists(newWalls, EAST) || getFFVal(row, col+1) == UNDEFINED) {
+  if(newWallExists(newWalls, EAST) || getArrVal(row, col+1) == UNDEFINED) {
+    setArrVal(row, col+1, 0);
     queue.push(rowColToI(row, col+1));
   }
 
   // Check the cell to the south
-  if(newWallExists(newWalls, SOUTH) || getFFVal(row-1, col) == UNDEFINED) {
+  if(newWallExists(newWalls, SOUTH) || getArrVal(row-1, col) == UNDEFINED) {
+    setArrVal(row-1, col, 0);
     queue.push(rowColToI(row-1, col));
   }
 
   // Check the cell to the west
-  if(newWallExists(newWalls, WEST) || getFFVal(row, col-1) == UNDEFINED) {
+  if(newWallExists(newWalls, WEST) || getArrVal(row, col-1) == UNDEFINED) {
+    setArrVal(row, col-1, 0);
     queue.push(rowColToI(row, col-1));
   }
 
@@ -176,7 +158,7 @@ void updateFloodfill(int x, int y, int newWalls) {
 
     //int val = (int) (x >> 8) & 255;
     int val = minNeighbor(row, col) + 1;
-    int curVal = getFFVal(row, col) & 255;
+    int curVal = getFFScore(row, col);
 
     // Floodfill this cell
     if(curVal != UNDEFINED && curVal == val) { 
@@ -211,7 +193,7 @@ void updateFloodfill(int x, int y, int newWalls) {
 void initializeFloodfill() {
   for(int i = 0; i < LENGTH; i++) {
     for(int j = 0; j < LENGTH; j++) {
-      setFFScore(i, j, UNDEFINED);
+      setArrVal(i, j, UNDEFINED);
     }
   }
 

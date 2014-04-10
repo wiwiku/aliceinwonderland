@@ -24,34 +24,26 @@ void setup() {
 void initializeThings() {
   initializeFloodfill();
   if (DEBUG) {
-    Serial.println("The maze is currently...");
+    Serial.println("The maze walls are currently...");
     for (int mazei = LENGTH-1; mazei >=0; mazei--) {
       for (int mazej = 0; mazej < LENGTH; mazej++) {
-        //      Serial.print(mazei, DEC);
-        //      Serial.print(",");
-        //      Serial.print(mazej, DEC);
-        //      Serial.print(": ");
         Serial.print(getWalls(mazei, mazej));
         Serial.print(" ");
       }
       Serial.println("");
     }
   }
-  //  Serial.println("values");
-  //  if (DEBUG) {
-  //    Serial.println("The maze is currently...");
-  //    for (int mazei = 0; mazei < LENGTH; mazei++) {
-  //      for (int mazej = 0; mazej < LENGTH; mazej++) {
-  //        //      Serial.print(mazei, DEC);
-  //        //      Serial.print(",");
-  //        //      Serial.print(mazej, DEC);
-  //        //      Serial.print(": ");
-  //        Serial.print(getFFVal(mazei, mazej));
-  //        Serial.print(" ");
-  //      }
-  //      Serial.println("");
-  //    }
-  //  }
+  Serial.println("values");
+  if (DEBUG) {
+    Serial.println("The maze values are currently...");
+    for (int mazei = LENGTH-1; mazei >= 0; mazei++) {
+      for (int mazej = 0; mazej < LENGTH; mazej++) {
+        Serial.print(getFFScore(mazei, mazej));
+        Serial.print(" ");
+      }
+      Serial.println("");
+    }
+  }
 }
 
 void loop() {
@@ -64,20 +56,19 @@ void loop() {
   //  }
   Serial.println("one");
   // If only one possible move, move.
-//  if ((ALLWALLS - walls) == curDir) {
-//    Serial.println("one.5");
-//    moveTo(x, y, curDir);
-//    //Serial.println("Move straight");
-//    return;
-//  } 
+  //  if ((ALLWALLS - walls) == curDir) {
+  //    Serial.println("one.5");
+  //    moveTo(x, y, curDir);
+  //    //Serial.println("Move straight");
+  //    return;
+  //  } 
 
   Serial.println("two");
   if (DEBUG) {
     Serial.println("Input new walls sum (N=1, E=2, S=4, W=8): ");
-    while (Serial.available() != 0) {
-      Serial.println("two.5-1");
+  delay(8000);
       if (Serial.available() > 0) {
-        Serial.println("two.5-2");
+        Serial.println("two.5");
         char incomingBytes[2];
         Serial.readBytesUntil('\n', incomingBytes, 2);
         int incomingVal = atoi(incomingBytes);
@@ -92,7 +83,6 @@ void loop() {
           Serial.println("Buggy wall value!!!!");
         }
       } 
-    }
   }
 
   Serial.println("three");
@@ -100,13 +90,16 @@ void loop() {
     //sense what walls are surrounding the mouse
     newWalls = senseWalls();
   }
+  
+  newWalls = newWalls - walls;
 
   //if they differ, from what we know, then we've found new walls
-  if (newWalls != walls) {
+  if (newWalls != 0) {
     updateFloodfill(x, y, newWalls);
-    setWalls(x, y, newWalls);
+    addNewWalls(x, y, newWalls);
     Serial.println("The walls have changed!!");
   }
+  
 
   if (DEBUG) {
     Serial.println("The maze is currently...");
@@ -136,7 +129,7 @@ void loop() {
     y = nextRow;
   }
   Serial.println("four");
-//  nextVal = getFFVal(x,y);
+  //  nextVal = getFFVal(x,y);
   //TIP: For first steps, go straight until there is more than one option. Then start updating floodfill.
   //See what the options are
   //  for (int pow = 1; pow <= 4; pow++) { //check the four directions
@@ -166,10 +159,14 @@ void loop() {
   Serial.print("WE are now at: ");
   Serial.print(x);
   Serial.print(",");
-  Serial.println(y);
+  Serial.print(y);
+  Serial.print("||||");
+  Serial.print("Wall value is: ");
+  Serial.println(getWalls(x,y));
+  
   moveTo(x,y, curDir);
-  delay(2000);
 }
+
 
 
 
