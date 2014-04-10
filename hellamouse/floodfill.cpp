@@ -36,7 +36,7 @@ void iToRowCol(int &row, int &col, int i) {
 
 /* Returns the first 8 bits of the value at the specified point */
 int getWalls(int row, int col) {
-  return (getFFVal(row, col) >> 8) | 255;
+  return (getFFVal(row, col) >> 8) & 255;
 }
 
 /*int calculateWallIndex(int row, int col, int dir) {
@@ -220,9 +220,6 @@ void initializeFloodfill() {
   setFFScore(7, 8, 0);
   setFFScore(8, 7, 0);
   setFFScore(8, 8, 0);
-
-  //starting position
-  setWalls(0,0, 14);
   
   updateFloodfill(7, 7, 12);
 }
