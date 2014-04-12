@@ -22,11 +22,13 @@ void setup() {
 }
 
 void initializeThings() {
-  initializeFloodfill();
+  initializeFloodfill();  
   if (DEBUG) {
     Serial.println("The maze walls are currently...");
-    for (int mazei = 0; mazei < LENGTH; mazei++) {
-      for (int mazej = LENGTH-1; mazej >= 0; mazej--) {
+    for (int mazej = LENGTH-1; mazej >= 0; mazej--) {
+      Serial.println(mazej);
+      Serial.println("   ");
+      for (int mazei = 0; mazei < LENGTH; mazei++) {
         Serial.print(getWalls(mazei, mazej));
         Serial.print(" ");
       }
@@ -40,16 +42,18 @@ void initializeThings() {
   
   Serial.println(getWalls(7,7));
   Serial.println(getFFScore(0,0));
-//  if (DEBUG) {
-//    Serial.println("The maze values are currently...");
-//    for (int mazei = 0; mazei < LENGTH; mazei++) {
-//      for (int mazej = LENGTH-1; mazej >= 0; mazej--) {
-//        Serial.print(getFFScore(mazei, mazej));
-//        Serial.print(" ");
-//      }
-//      Serial.println("");
-//    }
-//  }
+  if (DEBUG) {
+    Serial.println("The maze values are currently...");
+      for (int mazej = LENGTH-1; mazej >= 0; mazej--) {
+      Serial.println(mazej);
+      Serial.println("   ");
+    for (int mazei = 0; mazei < LENGTH; mazei++) {
+        Serial.print(getFFScore(mazei, mazej));
+        Serial.print(" ");
+      }
+      Serial.println("");
+    }
+  }
 }
 
 void loop() {
@@ -109,12 +113,15 @@ void loop() {
   if (DEBUG) {
     Serial.println("The maze is currently...");
     for (int mazei = LENGTH-1; mazei >= 0; mazei--) {
+      
+      Serial.println(mazej);
+      Serial.println("   ");
       for (int mazej = 0; mazej < LENGTH; mazej++) {
-        //      Serial.print(mazei, DEC);
-        //      Serial.print(",");
         //      Serial.print(mazej, DEC);
+        //      Serial.print(",");
+        //      Serial.print(mazei, DEC);
         //      Serial.print(": ");
-        Serial.print(getWalls(mazei, mazej));
+        Serial.print(getWalls(mazej, mazei));
         Serial.print(" ");
       }
       Serial.println("");

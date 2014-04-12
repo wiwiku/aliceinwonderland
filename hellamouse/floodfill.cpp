@@ -119,28 +119,27 @@ int minNeighbor(int row, int col) {
 
 /* Update values that need to be updated */
 void updateFloodfill(int x, int y, int newWalls) {
-  int row, col;
   queue.push(rowColToI(x, y));
 
   //for each new wall, add the adjacent cell to the queue
-  if(newWallExists(newWalls, EAST) || getArrVal(row+1, col) == UNDEFINED) {
-//    setArrVal(row+1, col, 0);
-    queue.push(rowColToI(row+1, col));
+  if(newWallExists(newWalls, EAST) || getArrVal(x+1, y) == UNDEFINED) {
+//    setArrVal(x+1, y, 0);
+    queue.push(rowColToI(x+1, y));
   }
 
-  if(newWallExists(newWalls, NORTH) || getArrVal(row, col+1) == UNDEFINED) {
-//    setArrVal(row, col+1, 0);
-    queue.push(rowColToI(row, col+1));
+  if(newWallExists(newWalls, NORTH) || getArrVal(x, y+1) == UNDEFINED) {
+//    setArrVal(x, y+1, 0);
+    queue.push(rowColToI(x, y+1));
   }
 
-  if(newWallExists(newWalls, WEST) || getArrVal(row-1, col) == UNDEFINED) {
-//    setArrVal(row-1, col, 0);
-    queue.push(rowColToI(row-1, col));
+  if(newWallExists(newWalls, WEST) || getArrVal(x-1, y) == UNDEFINED) {
+//    setArrVal(x-1, y, 0);
+    queue.push(rowColToI(x-1, y));
   }
 
-  if(newWallExists(newWalls, SOUTH) || getArrVal(row, col-1) == UNDEFINED) {
-//    setArrVal(row, col-1, 0);
-    queue.push(rowColToI(row, col-1));
+  if(newWallExists(newWalls, SOUTH) || getArrVal(x, y-1) == UNDEFINED) {
+//    setArrVal(x, y-1, 0);
+    queue.push(rowColToI(x, y-1));
   }
 
   //for each thing in the queue, check that it's value is 1+lowest neighbor, if not. set it and add its neighbors
