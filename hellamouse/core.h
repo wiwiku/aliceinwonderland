@@ -7,4 +7,4 @@
 #define SOUTH 4
 #define WEST 8
 #define ALLWALLS 15
-#define UNDEFINED 8192
+#define UNDEFINED 255 //we won't have a spiral maze //8192

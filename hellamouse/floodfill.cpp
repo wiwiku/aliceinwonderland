@@ -91,25 +91,25 @@ void getAdjacentCell(int &row, int &col, int dir) {
 /* Return value of smallest open neighbor */
 int minNeighbor(int row, int col) {
   int small = getFFScore(row, col); //there should be some neighbor smaller than it
-  if(!wallExists(row, col, NORTH)) {
+  if(!wallExists(row, col, EAST)) {
     if (getFFScore(row+1, col) < small) {
       small = getFFScore(row+1, col);
     }
   }
-  // Check the cel to the east
-  if(!wallExists(row, col, EAST)) {
+  
+  if(!wallExists(row, col, NORTH)) {
     if (getFFScore(row, col+1) < small) {
       small = getFFScore(row, col+1);
     }
   }
-  // Check the cell to the south
-  if(!wallExists(row, col, SOUTH)) {
+  
+  if(!wallExists(row, col, WEST)) {
     if (getFFScore(row-1, col) < small) {
       small = getFFScore(row-1, col);
     }
   }
-  // Check the cell to the west
-  if(!wallExists(row, col, WEST)) {
+  
+  if(!wallExists(row, col, SOUTH)) {
     if (getFFScore(row, col-1) < small) {
       small = getFFScore(row, col-1);
     }
@@ -123,68 +123,62 @@ void updateFloodfill(int x, int y, int newWalls) {
   queue.push(rowColToI(x, y));
 
   //for each new wall, add the adjacent cell to the queue
-  // Check the cell to the north
-  if(newWallExists(newWalls, NORTH) || getArrVal(row+1, col) == UNDEFINED) {
-    setArrVal(row+1, col, 0);
+  if(newWallExists(newWalls, EAST) || getArrVal(row+1, col) == UNDEFINED) {
+//    setArrVal(row+1, col, 0);
     queue.push(rowColToI(row+1, col));
   }
 
-  // Check the cel to the east
-  if(newWallExists(newWalls, EAST) || getArrVal(row, col+1) == UNDEFINED) {
-    setArrVal(row, col+1, 0);
+  if(newWallExists(newWalls, NORTH) || getArrVal(row, col+1) == UNDEFINED) {
+//    setArrVal(row, col+1, 0);
     queue.push(rowColToI(row, col+1));
   }
 
-  // Check the cell to the south
-  if(newWallExists(newWalls, SOUTH) || getArrVal(row-1, col) == UNDEFINED) {
-    setArrVal(row-1, col, 0);
+  if(newWallExists(newWalls, WEST) || getArrVal(row-1, col) == UNDEFINED) {
+//    setArrVal(row-1, col, 0);
     queue.push(rowColToI(row-1, col));
   }
 
-  // Check the cell to the west
-  if(newWallExists(newWalls, WEST) || getArrVal(row, col-1) == UNDEFINED) {
-    setArrVal(row, col-1, 0);
+  if(newWallExists(newWalls, SOUTH) || getArrVal(row, col-1) == UNDEFINED) {
+//    setArrVal(row, col-1, 0);
     queue.push(rowColToI(row, col-1));
   }
 
   //for each thing in the queue, check that it's value is 1+lowest neighbor, if not. set it and add its neighbors
   //if all good. all good.
   while(!queue.isEmpty()) {
-    int x = queue.pop();
-    int i = x & 255; //bits
-
+    int i = queue.pop() & 255;//double-check
     int row, col;
     iToRowCol( i, row, col );
 
     //int val = (int) (x >> 8) & 255;
-    int val = minNeighbor(row, col) + 1;
-    int curVal = getFFScore(row, col);
+    int val = minNeighbor(row, col) + 1; //value that it should be
+    int curVal = getFFScore(row, col); //value that it is
 
-    // Floodfill this cell
     if(curVal != UNDEFINED && curVal == val) { 
       continue; 
     }
+    
+    // Floodfill this cell  
     setFFScore(row, col, val);
 
     // Check the cell to the north
     if(!wallExists(row, col, NORTH)) {
-      //queue.push( rowColtoZ(row + 1, col) | ((val) << 8) );
-      queue.push( rowColToI(row + 1, col));
+      queue.push( rowColToI(row, col+1));
     }
 
     // Check the cel to the east
     if(!wallExists(row, col, EAST)) {
-      queue.push( rowColToI(row, col + 1));
+      queue.push( rowColToI(row+1, col));
     }
 
     // Check the cell to the south
     if(!wallExists(row, col, SOUTH)) {
-      queue.push( rowColToI(row - 1, col));
+      queue.push( rowColToI(row, col-1));
     }
 
     // Check the cell to the west
     if(!wallExists(row, col, WEST)) {
-      queue.push( rowColToI(row, col - 1));
+      queue.push( rowColToI(row-1, col));
     }
   }
 }

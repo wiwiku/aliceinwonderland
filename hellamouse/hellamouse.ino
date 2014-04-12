@@ -25,8 +25,8 @@ void initializeThings() {
   initializeFloodfill();
   if (DEBUG) {
     Serial.println("The maze walls are currently...");
-    for (int mazei = LENGTH-1; mazei >=0; mazei--) {
-      for (int mazej = 0; mazej < LENGTH; mazej++) {
+    for (int mazei = 0; mazei < LENGTH; mazei++) {
+      for (int mazej = LENGTH-1; mazej >= 0; mazej--) {
         Serial.print(getWalls(mazei, mazej));
         Serial.print(" ");
       }
@@ -34,26 +34,33 @@ void initializeThings() {
     }
   }
   Serial.println("values");
-  if (DEBUG) {
-    Serial.println("The maze values are currently...");
-    for (int mazei = LENGTH-1; mazei >= 0; mazei++) {
-      for (int mazej = 0; mazej < LENGTH; mazej++) {
-        Serial.print(getFFScore(mazei, mazej));
-        Serial.print(" ");
-      }
-      Serial.println("");
-    }
-  }
+  //check that the values are right after initilization
+  Serial.println(getWalls(0,0));
+  Serial.println(getFFScore(0,0));
+  
+  Serial.println(getWalls(7,7));
+  Serial.println(getFFScore(0,0));
+//  if (DEBUG) {
+//    Serial.println("The maze values are currently...");
+//    for (int mazei = 0; mazei < LENGTH; mazei++) {
+//      for (int mazej = LENGTH-1; mazej >= 0; mazej--) {
+//        Serial.print(getFFScore(mazei, mazej));
+//        Serial.print(" ");
+//      }
+//      Serial.println("");
+//    }
+//  }
 }
 
 void loop() {
   walls = getWalls(x,y);  
 
-  //  //Check for goal state
-  //  if (getFFVal(x, y) == 0) {
-  //    //do something? switch to backtrack mode
-  //    return;
-  //  }
+    //Check for goal state
+    if (getFFScore(x, y) == 0) {
+      Serial.println("Goal");
+      //do something? switch to backtrack mode
+      return;
+    }
   Serial.println("one");
   // If only one possible move, move.
   //  if ((ALLWALLS - walls) == curDir) {
@@ -90,11 +97,9 @@ void loop() {
     //sense what walls are surrounding the mouse
     newWalls = senseWalls();
   }
-  
-  newWalls = newWalls - walls;
 
   //if they differ, from what we know, then we've found new walls
-  if (newWalls != 0) {
+  if (newWalls != walls) {
     updateFloodfill(x, y, newWalls);
     addNewWalls(x, y, newWalls);
     Serial.println("The walls have changed!!");
