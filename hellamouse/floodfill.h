@@ -10,3 +10,7 @@ bool newWallExists(int newWalls, int dir);
 int minNeighbor(int x, int y);
 void getAdjacentCell(int &row, int &col, int dir);
 int updateFloodfill(int row, int col, int newWalls);
+
+boolean qEmpty();
+int qPop();
+void qPush(int i);

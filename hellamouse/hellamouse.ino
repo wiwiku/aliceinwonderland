@@ -26,8 +26,8 @@ void initializeThings() {
   if (DEBUG) {
     Serial.println("The maze walls are currently...");
     for (int mazej = LENGTH-1; mazej >= 0; mazej--) {
-      Serial.println(mazej);
-      Serial.println("   ");
+      Serial.print(mazej);
+      Serial.print("   ");
       for (int mazei = 0; mazei < LENGTH; mazei++) {
         Serial.print(getWalls(mazei, mazej));
         Serial.print(" ");
@@ -45,8 +45,8 @@ void initializeThings() {
   if (DEBUG) {
     Serial.println("The maze values are currently...");
       for (int mazej = LENGTH-1; mazej >= 0; mazej--) {
-      Serial.println(mazej);
-      Serial.println("   ");
+      Serial.print(mazej);
+      Serial.print("   ");
     for (int mazei = 0; mazei < LENGTH; mazei++) {
         Serial.print(getFFScore(mazei, mazej));
         Serial.print(" ");
@@ -54,10 +54,64 @@ void initializeThings() {
       Serial.println("");
     }
   }
+//  Serial.println("Queue");
+//  
+//  while(!qEmpty()) {
+//    int i = qPop() & 255;//double-check
+//    Serial.print("popped: ");
+//    Serial.print(i);
+//    Serial.print("     coords are: ");
+//    int row, col;
+//    iToRowCol( row, col, i );
+//    Serial.print(row);
+//    Serial.print(", ");
+//    Serial.print(col);
+//
+//    //int val = (int) (x >> 8) & 255;
+//    int val = minNeighbor(row, col) + 1; //value that it should be
+//    Serial.print("min neighbor: ");
+//    Serial.println(val);
+//    int curVal = getFFScore(row, col); //value that it is
+//
+//    if(curVal != UNDEFINED && curVal == val) { 
+//      continue; 
+//      Serial.println("All good here");
+//    }
+//    
+//    // Floodfill this cell  
+//    setFFScore(row, col, val);
+//
+//    // Check the cell to the north
+//    if(!wallExists(row, col, NORTH)) {
+//      qPush( rowColToI(row, col+1));
+//      Serial.println("added north wall");
+//    }
+//
+//    // Check the cel to the east
+//    if(!wallExists(row, col, EAST)) {
+//      qPush( rowColToI(row+1, col));
+//      
+//      Serial.println("added east wall");
+//    }
+//
+//    // Check the cell to the south
+//    if(!wallExists(row, col, SOUTH)) {
+//      qPush( rowColToI(row, col-1));
+//      Serial.println("added south wall");
+//    }
+//
+//    // Check the cell to the west
+//    if(!wallExists(row, col, WEST)) {
+//      qPush( rowColToI(row-1, col));
+//      Serial.println("added west wall");
+//    }
+//  }
+//  Serial.println("EEEENNNNNDDDDDDDD");
 }
 
 void loop() {
   walls = getWalls(x,y);  
+  newwalls = walls;
 
     //Check for goal state
     if (getFFScore(x, y) == 0) {
@@ -114,14 +168,31 @@ void loop() {
     Serial.println("The maze is currently...");
     for (int mazei = LENGTH-1; mazei >= 0; mazei--) {
       
-      Serial.println(mazej);
-      Serial.println("   ");
+      Serial.print(mazei);
+      Serial.print("   ");
       for (int mazej = 0; mazej < LENGTH; mazej++) {
         //      Serial.print(mazej, DEC);
         //      Serial.print(",");
         //      Serial.print(mazei, DEC);
         //      Serial.print(": ");
         Serial.print(getWalls(mazej, mazei));
+        Serial.print(" ");
+      }
+      Serial.println("");
+    }
+  }
+  if (DEBUG) {
+    Serial.println("The values are currently...");
+    for (int mazei = LENGTH-1; mazei >= 0; mazei--) {
+      
+      Serial.print(mazei);
+      Serial.print("   ");
+      for (int mazej = 0; mazej < LENGTH; mazej++) {
+        //      Serial.print(mazej, DEC);
+        //      Serial.print(",");
+        //      Serial.print(mazei, DEC);
+        //      Serial.print(": ");
+        Serial.print(getFFScore(mazej, mazei));
         Serial.print(" ");
       }
       Serial.println("");
@@ -140,34 +211,35 @@ void loop() {
     x = nextCol;
     y = nextRow;
   }
-  Serial.println("four");
-  //  nextVal = getFFVal(x,y);
-  //TIP: For first steps, go straight until there is more than one option. Then start updating floodfill.
-  //See what the options are
-  //  for (int pow = 1; pow <= 4; pow++) { //check the four directions
-  //    int dir = 1<<pow;
-  //    boolean hasWall = wallExists(x, y, (1<<dir));
-  //    int row = x; 
-  //    int col = y;
-  //    if (!hasWall) {
-  //      getAdjacentCell(row, col, dir);
-  //
-  //      int val = getFFVal(row, col);
-  //      Serial.println("five");
-  //      // Go straight if tie and if possible or set to smallest value
-  //      if (val == nextVal && dir == curDir || val < nextVal) {
-  //        nextRow = row;
-  //        nextCol = col;
-  //        nextVal = val;
-  //      }
-  //    }
-
-  //    Serial.println("six");
-  //    curDir = x == nextCol? (y > nextRow ? NORTH:SOUTH) : 
-  //    (x > nextCol ? EAST:WEST);
-  //    x = nextCol; 
-  //    y = nextRow;
-  //  }
+  
+//  Serial.println("four");
+//    nextVal = getFFScore(x,y);
+//  //TIP: For first steps, go straight until there is more than one option. Then start updating floodfill.
+//  //See what the options are
+//    for (int pow = 1; pow <= 4; pow++) { //check the four directions
+//      int dir = 1<<pow;
+//      boolean hasWall = wallExists(x, y, (1<<dir));
+//      int row = x; 
+//      int col = y;
+//      if (!hasWall) {
+//        getAdjacentCell(row, col, dir);
+//  
+//        int val = getFFVal(row, col);
+//        Serial.println("five");
+//        // Go straight if tie and if possible or set to smallest value
+//        if (val == nextVal && dir == curDir || val < nextVal) {
+//          nextRow = row;
+//          nextCol = col;
+//          nextVal = val;
+//        }
+//      }
+//
+//      Serial.println("six");
+//      curDir = x == nextCol? (y > nextRow ? NORTH:SOUTH) : 
+//      (x > nextCol ? EAST:WEST);
+//      x = nextCol; 
+//      y = nextRow;
+//    }
   Serial.print("WE are now at: ");
   Serial.print(x);
   Serial.print(",");

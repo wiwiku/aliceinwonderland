@@ -9,6 +9,16 @@ int floodfillArr[LENGTH][LENGTH];
   array index (last 8 bits) */
 QueueList <int> queue;
 
+boolean qEmpty() {
+  return queue.isEmpty();
+}
+int qPop() {
+  return queue.pop();
+}
+void qPush(int i){
+  queue.push(i);
+}
+
 /* Returns the stored value at the specified point */
 int getArrVal(int row, int col) {
   return floodfillArr[row][col];
@@ -91,6 +101,9 @@ void getAdjacentCell(int &row, int &col, int dir) {
 /* Return value of smallest open neighbor */
 int minNeighbor(int row, int col) {
   int small = getFFScore(row, col); //there should be some neighbor smaller than it
+  if ((row == 7 || row == 8) && (col == 7 || col == 8)) {
+    return small-1;
+  }
   if(!wallExists(row, col, EAST)) {
     if (getFFScore(row+1, col) < small) {
       small = getFFScore(row+1, col);
@@ -123,22 +136,18 @@ void updateFloodfill(int x, int y, int newWalls) {
 
   //for each new wall, add the adjacent cell to the queue
   if(newWallExists(newWalls, EAST) || getArrVal(x+1, y) == UNDEFINED) {
-//    setArrVal(x+1, y, 0);
     queue.push(rowColToI(x+1, y));
   }
 
   if(newWallExists(newWalls, NORTH) || getArrVal(x, y+1) == UNDEFINED) {
-//    setArrVal(x, y+1, 0);
     queue.push(rowColToI(x, y+1));
   }
 
   if(newWallExists(newWalls, WEST) || getArrVal(x-1, y) == UNDEFINED) {
-//    setArrVal(x-1, y, 0);
     queue.push(rowColToI(x-1, y));
   }
 
   if(newWallExists(newWalls, SOUTH) || getArrVal(x, y-1) == UNDEFINED) {
-//    setArrVal(x, y-1, 0);
     queue.push(rowColToI(x, y-1));
   }
 
@@ -147,7 +156,7 @@ void updateFloodfill(int x, int y, int newWalls) {
   while(!queue.isEmpty()) {
     int i = queue.pop() & 255;//double-check
     int row, col;
-    iToRowCol( i, row, col );
+    iToRowCol( row, col, i );
 
     //int val = (int) (x >> 8) & 255;
     int val = minNeighbor(row, col) + 1; //value that it should be
