@@ -44,24 +44,6 @@ void setFFScore(int row, int col, int score) {
   setArrVal(row, col, (score & 255) | (getWalls(row, col) << 8));
 }
 
-/* Sets wall value [0-15] of this coordinate point */
-void addNewWalls(int row, int col, int walls) {
-  if (walls >= 0 && walls < 16) {
-    setArrVal(row, col, (getFFScore(row, col) | ((getWalls(row,col) | walls) << 8)));
-  }
-}
-
-/* Calculates the index if the 2D array were flattened */
-int rowColToI(int row, int col) {
-  return row + (LENGTH * col);
-}
-
-/* Sets row and col to the values in a 2D array given the index in a 1D array */
-void iToRowCol(int &row, int &col, int i) {
-  col = (int) i / LENGTH;
-  row = i - (col*16);
-}
-
 /* Check if a wall in the given direction exists */
 bool wallExists(int row, int col, int dir) {
   if ((row <= 0 && (dir==WEST)) || (col <= 0 && (dir == SOUTH)) || (row >= LENGTH-1 && dir == EAST) || (col >= LENGTH -1 && dir == NORTH)) {
@@ -75,6 +57,37 @@ bool wallExists(int row, int col, int dir) {
 /* Check if a new wall in the given direction exists */
 bool newWallExists(int newWalls, int dir) {
   return (newWalls & (dir & 15)) > 0;
+}
+
+/* Sets wall value [0-15] of this coordinate point */
+void addNewWalls(int row, int col, int walls) {
+  if (walls >= 0 && walls < 16) {
+    setArrVal(row, col, (getFFScore(row, col) | ((getWalls(row,col) | walls) << 8)));
+  }
+  //sync wall values for adjacent cells
+  if (newWallExists(walls, NORTH) && col < 15) {
+    setArrVal(row, col+1, (getFFScore(row, col+1) | ((getWalls(row, col+1) | SOUTH) << 8)));
+  }
+  if (newWallExists(walls, EAST) && row < 15) {
+    setArrVal(row+1, col, (getFFScore(row+1, col) | ((getWalls(row+1, col) | WEST) << 8)));
+  }
+  if (newWallExists(walls, SOUTH) && col > 0) {
+    setArrVal(row, col-1, (getFFScore(row, col-1) | ((getWalls(row, col-1) | NORTH) << 8)));
+  }
+  if (newWallExists(walls, WEST) && row > 0) {
+    setArrVal(row-1, col, (getFFScore(row-1, col) | ((getWalls(row-1, col) | EAST) << 8)));
+  }
+}
+
+/* Calculates the index if the 2D array were flattened */
+int rowColToI(int row, int col) {
+  return row + (LENGTH * col);
+}
+
+/* Sets row and col to the values in a 2D array given the index in a 1D array */
+void iToRowCol(int &row, int &col, int i) {
+  col = (int) i / LENGTH;
+  row = i - (col*16);
 }
 
 /* Set row and col to the coordinates in that direction */

@@ -110,8 +110,7 @@ void initializeThings() {
 }
 
 void loop() {
-  walls = getWalls(x,y);  
-  newwalls = walls;
+  walls = newWalls = getWalls(x,y);  
 
     //Check for goal state
     if (getFFScore(x, y) == 0) {
