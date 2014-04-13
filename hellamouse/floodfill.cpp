@@ -143,8 +143,8 @@ int minNeighbor(int row, int col) {
   return small;
 }
 
-/* Update values that need to be updated */
-void updateFloodfill(int x, int y, int newWalls) {
+/*Adds the cell in question and cells whose walls have changed to queue*/
+void addCellsToQueue(int x, int y, int newWalls) {
   queue.push(rowColToI(x, y));
 
   //for each new wall, add the adjacent cell to the queue
@@ -163,15 +163,15 @@ void updateFloodfill(int x, int y, int newWalls) {
   if(newWallExists(newWalls, SOUTH) || getArrVal(x, y-1) == UNDEFINED) {
     queue.push(rowColToI(x, y-1));
   }
+}
 
-  //for each thing in the queue, check that it's value is 1+lowest neighbor, if not. set it and add its neighbors
-  //if all good. all good.
+/*For each cell in the queue, check that its value is 1+lowest neighbor. If not, set it and check its neighbors*/
+void calculateFFValues(int x, int y) {
   while(!queue.isEmpty()) {
     int i = queue.pop() & 255;//double-check
     int row, col;
     iToRowCol( row, col, i );
 
-    //int val = (int) (x >> 8) & 255;
     int val = minNeighbor(row, col) + 1; //value that it should be
     int curVal = getFFScore(row, col); //value that it is
 
@@ -204,6 +204,12 @@ void updateFloodfill(int x, int y, int newWalls) {
   }
 }
 
+/* Update values that need to be updated */
+void updateFloodfill(int x, int y, int newWalls) {
+  addCellsToQueue(x, y, newWalls);
+  calculateFFValues(x, y);
+}
+
 /* Initial starting maze values */
 void initializeFloodfill() {
   for(int i = 0; i < LENGTH; i++) {
@@ -218,5 +224,6 @@ void initializeFloodfill() {
   setFFScore(8, 7, 0);
   setFFScore(8, 8, 0);
   
+  //set the initial cell values
   updateFloodfill(7, 7, 12);
 }
