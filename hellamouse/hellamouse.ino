@@ -13,12 +13,9 @@ int newWalls = 0;
 int dir = NORTH;
 int nextRow, nextCol, nextVal;
 
-boolean done = false;
-
 void setup() {
   Serial.begin(9600);
   initializeThings();
-  senseWalls();
 }
 
 void printMazeInfo() {
@@ -46,9 +43,7 @@ void printMazeInfo() {
 
 void initializeThings() {
   initializeFloodfill();  
-  if (DEBUG) { 
-    printMazeInfo(); 
-  }
+  if (DEBUG) { printMazeInfo(); }
 
   Serial.println("values");
   //check that the values are right after initilization
@@ -56,7 +51,7 @@ void initializeThings() {
   Serial.println(getFFScore(0,0));
 
   Serial.println(getWalls(7,7));
-  Serial.println(getFFScore(0,0));
+  Serial.println(getFFScore(7,7));
 }
 
 void loop() {
@@ -114,9 +109,7 @@ void loop() {
   }
 
 
-  if (DEBUG) { 
-    printMazeInfo(); 
-  }
+  if (DEBUG) { printMazeInfo(); }
 
   if (DEBUG) {
     nextRow++;
