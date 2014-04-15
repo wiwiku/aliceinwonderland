@@ -241,7 +241,6 @@ void flipFFScore(boolean returnState) {
     }
   }
   setFFScore(0,0,0);
-  Serial.println("about to update");
   updateFloodfill(0,0,3, returnState);
 }
 

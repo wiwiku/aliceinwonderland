@@ -4,7 +4,6 @@
 #include "floodfill.h"
 #include "motors.h"
 
-//memory
 int x = 0;
 int y = 0;
 int curDir = NORTH;
@@ -179,8 +178,6 @@ void loop() {
         nextVal = val;
       }
     }
-
-
   }
   curDir = x == nextRow? (y > nextCol ? SOUTH:NORTH) : 
   (x > nextRow ? WEST:EAST);
