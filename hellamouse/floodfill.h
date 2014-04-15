@@ -14,3 +14,5 @@ int updateFloodfill(int row, int col, int newWalls);
 boolean qEmpty();
 int qPop();
 void qPush(int i);
+int qCount();
+int qPeek();
