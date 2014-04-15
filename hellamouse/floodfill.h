@@ -11,6 +11,7 @@ int minNeighbor(int x, int y);
 void getAdjacentCell(int &row, int &col, int dir);
 int updateFloodfill(int row, int col, int newWalls, boolean returnState);
 void flipFFScore(boolean returnState);
+void pushIfValid(int x, int y);
 
 // Queue accessor methods for debugging
 boolean qEmpty();
@@ -18,3 +19,5 @@ int qPop();
 void qPush(int i);
 int qCount();
 int qPeek();
+
+void calculateFFValues(int x, int y, boolean returnState);

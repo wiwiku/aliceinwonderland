@@ -119,6 +119,13 @@ void getAdjacentCell(int &row, int &col, int dir) {
   }
 }
 
+/* Bounds checking */
+void pushIfValid(int x, int y) {
+  if (x >= 0 && x < LENGTH && y >= 0 && y < LENGTH) {
+    queue.push( rowColToI(x, y));
+  }
+}
+
 /*For each cell in the queue, check that its value is 1+lowest neighbor. If not, set it and check its neighbors*/
 void calculateFFValues(int x, int y, boolean returnState) {
   while(!queue.isEmpty()) {
@@ -127,32 +134,34 @@ void calculateFFValues(int x, int y, boolean returnState) {
     iToRowCol( row, col, i );
 
     // Get smallest neighbor
-    int small = getFFScore(row, col); //there should be some neighbor smaller than it
+    int small = -1; //getFFScore(row, col); //there should be some neighbor smaller than it
     if (!returnState && (row == 7 || row == 8) && (col == 7 || col == 8)) {
+      small = getFFScore(row, col);
       small--;
     } else if (returnState && (row == 0) && (col == 0)) {
+      small = getFFScore(row, col);
       small--;
     }  else {
       if(!wallExists(row, col, EAST)) {
-        if (getFFScore(row+1, col) < small) {
+        if (small == -1 || getFFScore(row+1, col) < small) {
           small = getFFScore(row+1, col);
         }
       }
   
       if(!wallExists(row, col, NORTH)) {
-        if (getFFScore(row, col+1) < small) {
+        if (small == -1 || getFFScore(row, col+1) < small) {
           small = getFFScore(row, col+1);
         }
       }
   
       if(!wallExists(row, col, WEST)) {
-        if (getFFScore(row-1, col) < small) {
+        if (small == -1 || getFFScore(row-1, col) < small) {
           small = getFFScore(row-1, col);
         }
       }
   
       if(!wallExists(row, col, SOUTH)) {
-        if (getFFScore(row, col-1) < small) {
+        if (small == -1 || getFFScore(row, col-1) < small) {
           small = getFFScore(row, col-1);
         }
       }
@@ -198,19 +207,19 @@ void updateFloodfill(int x, int y, int newWalls, boolean returnState) {
 
   //for each new wall, add the adjacent cell to the queue
   if(newWallExists(newWalls, EAST) || getFFScore(x+1, y) == UNDEFINED) {
-    queue.push(rowColToI(x+1, y));
+    pushIfValid(x+1, y);
   }
 
   if(newWallExists(newWalls, NORTH) || getFFScore(x, y+1) == UNDEFINED) {
-    queue.push(rowColToI(x, y+1));
+    pushIfValid(x, y+1);
   }
 
   if(newWallExists(newWalls, WEST) || getFFScore(x-1, y) == UNDEFINED) {
-    queue.push(rowColToI(x-1, y));
+    pushIfValid(x-1, y);
   }
 
   if(newWallExists(newWalls, SOUTH) || getFFScore(x, y-1) == UNDEFINED) {
-    queue.push(rowColToI(x, y-1));
+    pushIfValid(x, y-1);
   }
    calculateFFValues(x, y, returnState);
 }
@@ -231,6 +240,7 @@ void initializeFloodfill(boolean returnState) {
 
   //set the initial cell values
   updateFloodfill(7, 7, 12, returnState);
+  //calculateFFValues(7,7, returnState);
 }
 
 /* Sets (0,0) to be the goal state and recalculates floodfill values */
@@ -242,6 +252,7 @@ void flipFFScore(boolean returnState) {
   }
   setFFScore(0,0,0);
   updateFloodfill(0,0,3, returnState);
+  //calculateFFValues(7,7, returnState);
 }
 
 
