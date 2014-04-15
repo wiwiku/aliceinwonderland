@@ -11,6 +11,7 @@ int minNeighbor(int x, int y);
 void getAdjacentCell(int &row, int &col, int dir);
 int updateFloodfill(int row, int col, int newWalls);
 
+// Queue accessor methods for debugging
 boolean qEmpty();
 int qPop();
 void qPush(int i);

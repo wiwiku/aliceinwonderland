@@ -210,7 +210,7 @@ void updateFloodfill(int x, int y, int newWalls) {
   if(newWallExists(newWalls, SOUTH) || getArrVal(x, y-1) == UNDEFINED) {
     queue.push(rowColToI(x, y-1));
   }
-   //calculateFFValues(x, y);
+   calculateFFValues(x, y);
 }
 
 /* Initial starting maze values */
