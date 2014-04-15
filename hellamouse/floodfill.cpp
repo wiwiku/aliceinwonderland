@@ -120,7 +120,7 @@ void getAdjacentCell(int &row, int &col, int dir) {
 }
 
 /*For each cell in the queue, check that its value is 1+lowest neighbor. If not, set it and check its neighbors*/
-void calculateFFValues(int x, int y) {
+void calculateFFValues(int x, int y, boolean returnState) {
   while(!queue.isEmpty()) {
     int i = queue.pop() & 255;//double-check
     int row, col;
@@ -128,9 +128,11 @@ void calculateFFValues(int x, int y) {
 
     // Get smallest neighbor
     int small = getFFScore(row, col); //there should be some neighbor smaller than it
-    if ((row == 7 || row == 8) && (col == 7 || col == 8)) {
+    if (!returnState && (row == 7 || row == 8) && (col == 7 || col == 8)) {
       small--;
-    } else {
+    } else if (returnState && (row == 0) && (col == 0)) {
+      small--;
+    }  else {
       if(!wallExists(row, col, EAST)) {
         if (getFFScore(row+1, col) < small) {
           small = getFFScore(row+1, col);
@@ -189,32 +191,32 @@ void calculateFFValues(int x, int y) {
 }
 
 /* Update values that need to be updated */
-void updateFloodfill(int x, int y, int newWalls) {
+void updateFloodfill(int x, int y, int newWalls, boolean returnState) {
 
   /*Adds the cell in question and cells whose walls have changed to queue*/
   queue.push(rowColToI(x, y));
 
   //for each new wall, add the adjacent cell to the queue
-  if(newWallExists(newWalls, EAST) || getArrVal(x+1, y) == UNDEFINED) {
+  if(newWallExists(newWalls, EAST) || getFFScore(x+1, y) == UNDEFINED) {
     queue.push(rowColToI(x+1, y));
   }
 
-  if(newWallExists(newWalls, NORTH) || getArrVal(x, y+1) == UNDEFINED) {
+  if(newWallExists(newWalls, NORTH) || getFFScore(x, y+1) == UNDEFINED) {
     queue.push(rowColToI(x, y+1));
   }
 
-  if(newWallExists(newWalls, WEST) || getArrVal(x-1, y) == UNDEFINED) {
+  if(newWallExists(newWalls, WEST) || getFFScore(x-1, y) == UNDEFINED) {
     queue.push(rowColToI(x-1, y));
   }
 
-  if(newWallExists(newWalls, SOUTH) || getArrVal(x, y-1) == UNDEFINED) {
+  if(newWallExists(newWalls, SOUTH) || getFFScore(x, y-1) == UNDEFINED) {
     queue.push(rowColToI(x, y-1));
   }
-   calculateFFValues(x, y);
+   calculateFFValues(x, y, returnState);
 }
 
 /* Initial starting maze values */
-void initializeFloodfill() {
+void initializeFloodfill(boolean returnState) {
   for(int i = 0; i < LENGTH; i++) {
     for(int j = 0; j < LENGTH; j++) {
       setArrVal(i, j, UNDEFINED);
@@ -228,7 +230,19 @@ void initializeFloodfill() {
   setFFScore(8, 8, 0);
 
   //set the initial cell values
-  updateFloodfill(7, 7, 12);
+  updateFloodfill(7, 7, 12, returnState);
+}
+
+/* Sets (0,0) to be the goal state and recalculates floodfill values */
+void flipFFScore(boolean returnState) {
+  for(int i = 0; i < LENGTH; i++) {
+    for(int j = 0; j < LENGTH; j++) {
+      setFFScore(i, j, UNDEFINED);
+    }
+  }
+  setFFScore(0,0,0);
+  Serial.println("about to update");
+  updateFloodfill(0,0,3, returnState);
 }
 
 

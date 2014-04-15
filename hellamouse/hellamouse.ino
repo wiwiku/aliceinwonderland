@@ -12,10 +12,11 @@ int walls = 0;
 int newWalls = 0;
 int nextRow, nextCol, nextVal;
 int dir, row, col, val; 
-boolean hasWall;
+boolean hasWall, returnState;
 
 void setup() {
   Serial.begin(9600);
+  returnState = false;
   initializeThings();
 }
 
@@ -96,8 +97,7 @@ void printMazeInfo() {
 }
 
 void initializeThings() {
-  initializeFloodfill();  
-
+  initializeFloodfill(returnState);
   if (DEBUG) { 
     printMazeInfo(); 
   }
@@ -106,9 +106,14 @@ void initializeThings() {
 void loop() {
   //Check for goal state
   if (getFFScore(x, y) == 0) {
-    Serial.println("Goal");
-    //do something? switch to backtrack mode
-    return;
+    returnState = !returnState;
+    if (returnState) {
+      flipFFScore(returnState);
+      Serial.println("Goal");
+    } else {
+      //this is where we've completed one run. need to save maze and keep running....
+      return;
+    }
   }
 
   walls = getWalls(x,y); 
@@ -124,7 +129,7 @@ void loop() {
 
   if (DEBUG) {
     Serial.println("Input new walls sum (N=1, E=2, S=4, W=8): ");
-    delay(3000);
+    delay(1000);
     if (Serial.available() > 0) {
       char incomingBytes[2];
       Serial.readBytesUntil('\n', incomingBytes, 2);
@@ -148,7 +153,7 @@ void loop() {
   if (newWalls > walls) {
     Serial.println("WE NEED TO FLOODFILL!");
     addNewWalls(x, y, newWalls);
-    updateFloodfill(x, y, newWalls);
+    updateFloodfill(x, y, newWalls, returnState);
   }
 
   if (DEBUG) { 
@@ -168,7 +173,7 @@ void loop() {
       nextVal = getFFScore(row, col);
 
       // Go straight if tie and if possible or set to smallest value
-      if (val == nextVal && dir == curDir || val > nextVal) {
+      if (val > nextVal) {//val == nextVal && dir == curDir || 
         nextRow = row;
         nextCol = col;
         nextVal = val;
@@ -177,8 +182,8 @@ void loop() {
 
 
   }
-  curDir = x == nextCol? (y > nextRow ? NORTH:SOUTH) : 
-  (x > nextCol ? EAST:WEST);
+  curDir = x == nextRow? (y > nextCol ? SOUTH:NORTH) : 
+  (x > nextRow ? WEST:EAST);
   x = nextRow; 
   y = nextCol;
   Serial.print("We are now HEADING to: ");

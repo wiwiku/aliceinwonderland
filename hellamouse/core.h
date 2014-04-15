@@ -7,4 +7,5 @@
 #define SOUTH 4
 #define WEST 8
 #define ALLWALLS 15
-#define UNDEFINED 255 //we won't have a spiral maze //8192
+#define UNDEFINED 255 //we won't have a spiral maze. if this val is > 255, better change the flip method
+

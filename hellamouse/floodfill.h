@@ -1,4 +1,4 @@
-int initializeFloodfill(void);
+int initializeFloodfill(boolean returnState);
 int rowColToI(int row, int col);
 void iToRowCol(int &row, int &col, int i);
 int getWalls(int row, int col);
@@ -9,7 +9,8 @@ bool wallExists(int row, int col, int dir);
 bool newWallExists(int newWalls, int dir);
 int minNeighbor(int x, int y);
 void getAdjacentCell(int &row, int &col, int dir);
-int updateFloodfill(int row, int col, int newWalls);
+int updateFloodfill(int row, int col, int newWalls, boolean returnState);
+void flipFFScore(boolean returnState);
 
 // Queue accessor methods for debugging
 boolean qEmpty();
