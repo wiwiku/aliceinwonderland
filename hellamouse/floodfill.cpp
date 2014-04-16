@@ -259,18 +259,20 @@ void flipFFScore(boolean returnState) {
 }
 
 /* Read values stored in EEPROM */
-void readMazeFromMem() {
+int readMazeFromMem() {
   for (int mazei = 0; mazei < LENGTH; mazei++) {
     for (int mazej = 0; mazej < LENGTH; mazej++) 
       addNewWalls(mazei, mazej, EEPROM.read(rowColToI(mazei, mazej)));
   }
+  return EEPROM.read(256);//for curRun var
 }
 
 /* Writes walls to EEPROM. If only checks for what is 0, might overlap with previously saved info */
-void writeMazeToMem() {
+void writeMazeToMem(int curRun) {
   for (int mazei = 0; mazei < LENGTH; mazei++) {
     for (int mazej = 0; mazej < LENGTH; mazej++) 
       EEPROM.write(rowColToI(mazei, mazej), getWalls(mazei, mazej));
   }
+  EEPROM.write(256, curRun);
 }
 

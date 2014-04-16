@@ -11,7 +11,7 @@ int curDir;
 int walls = 0;
 int newWalls = 0;
 int nextRow, nextCol, nextVal;
-int dir, row, col, val; 
+int dir, row, col, val, curRun; 
 boolean hasWall, returnState;
 
 void setup() {
@@ -99,7 +99,7 @@ void printMazeInfo() {
 
 void initializeThings() {
   //If we shouldn't read from mem, mem should be cleared outside of this program
-  readMazeFromMem();
+  curRun = readMazeFromMem();
   initializeFloodfill(returnState);
   //calc(7,7,returnState);
   
@@ -229,9 +229,10 @@ void loop() {
       flipFFScore(returnState);
       Serial.println("Goal");
     } else {
-      //this is where we've completed one run. need to save maze and keep running....
+      //this is where we've completed one run.
       //Write maze to EPPROM
-      writeMazeToMem();
+      curRun++;
+      writeMazeToMem(curRun);
       initializeFloodfill(returnState);
     }
   }
@@ -249,7 +250,7 @@ void loop() {
 
   if (DEBUG) {
     Serial.println("Input new walls sum (N=1, E=2, S=4, W=8): ");
-    delay(5000);
+    delay(3000);
     if (Serial.available() > 0) {
       char incomingBytes[2];
       Serial.readBytesUntil('\n', incomingBytes, 2);
@@ -286,8 +287,8 @@ void loop() {
   val = getFFScore(x,y);
   //TIP: For first steps, go straight until there is more than one option. Then start updating floodfill.
   //See what the options are
-  for (int pow = 3; pow >= 0; pow--) { //check the four directions
-    dir = 1<<pow;
+  for (int pow = curRun + 3; pow >= curRun; pow--) { //check the four directions
+    dir = 1<<(pow%4);
     Serial.print("Checking this direction: ");
     Serial.println(dir);
     hasWall = wallExists(x, y, dir);
