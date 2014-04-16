@@ -1,17 +1,17 @@
 int initializeFloodfill(boolean returnState);
-int rowColToI(int row, int col);
-void iToRowCol(int &row, int &col, int i);
-int getWalls(int row, int col);
-void addNewWalls(int row, int col, int walls);
-int getFFScore(int row, int col);
-void setFFScore(int row, int col, int score);
-bool wallExists(int row, int col, int dir);
-bool newWallExists(int newWalls, int dir);
+int rowColToI(byte row, byte col);
+void iToRowCol(byte &row, byte &col, int i);
+byte getWalls(byte row, byte col);
+void addNewWalls(byte row, byte col, byte walls);
+byte getFFScore(byte row, byte col);
+void setFFScore(byte row, byte col, byte score);
+bool wallExists(byte row, byte col, byte dir);
+bool newWallExists(byte newWalls, byte dir);
 int minNeighbor(int x, int y);
-void getAdjacentCell(int &row, int &col, int dir);
-int updateFloodfill(int row, int col, int newWalls, boolean returnState);
+void getAdjacentCell(byte &row, byte &col, byte dir);
+void updateFloodfill(byte x, byte y, byte newWalls, boolean returnState);
 void flipFFScore(boolean returnState);
-void pushIfValid(int x, int y);
+void pushIfValid(byte x, byte y);
 void readMazeFromMem();
 void writeMazeToMem();
 
@@ -22,4 +22,4 @@ void qPush(int i);
 int qCount();
 int qPeek();
 
-void calculateFFValues(int x, int y, boolean returnState);
+void calculateFFValues(byte x, byte y, boolean returnState);

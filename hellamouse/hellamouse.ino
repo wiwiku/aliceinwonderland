@@ -5,13 +5,13 @@
 #include "floodfill.h"
 #include "motors.h"
 
-int x = 0;
-int y = 0;
-int curDir;
-int walls = 0;
-int newWalls = 0;
-int nextRow, nextCol, nextVal;
-int dir, row, col, val; 
+byte x = 0;
+byte y = 0;
+byte curDir;
+byte walls = 0;
+byte newWalls = 0;
+byte nextRow, nextCol, nextVal;
+byte dir, row, col, val; 
 boolean hasWall, returnState;
 
 void setup() {
@@ -25,11 +25,11 @@ void printMazeInfo() {
   char vertWall = '|';
   char horiWall = '--';
   char noWall = '  ';
-  int thisVal, thisWall;
+  byte thisVal, thisWall;
   Serial.println("The maze is currently....");
-  for (int mazei = LENGTH-1; mazei >= 0; mazei--) {
-    for (int i = 0; i < 3; i++) {
-      for (int mazej = 0; mazej < LENGTH; mazej++) {
+  for (byte mazei = LENGTH-1; mazei >= 0; mazei--) {
+    for (byte i = 0; i < 3; i++) {
+      for (byte mazej = 0; mazej < LENGTH; mazej++) {
         thisWall = getWalls(mazej, mazei);
         if (i == 0) { //line 1 (north walls)
           if (mazej == 0) { 
@@ -88,7 +88,7 @@ void printMazeInfo() {
     }
   }
   Serial.print("       ");
-  for (int i = 0; i < LENGTH; i++) {
+  for (byte i = 0; i < LENGTH; i++) {
     Serial.print(" ");
     Serial.print(i);
     if (i < 10) {Serial.print(" ");}
@@ -134,10 +134,10 @@ void initializeThings() {
 //   calculateFFValues(x, y, returnState);
 //}
 
-void calc(int x, int y, boolean returnState) {
+void calc(byte x, byte y, boolean returnState) {
   while(!qEmpty()) {
-    int i = qPop() & 255;//double-check
-    int row, col;
+    byte i = qPop() & 255;//double-check
+    byte row, col;
     iToRowCol( row, col, i );
     Serial.print("We are checking this coordinate: ");
     Serial.print(row);
@@ -145,7 +145,7 @@ void calc(int x, int y, boolean returnState) {
     Serial.println(col);
 
     // Get smallest neighbor
-    int small = -1;// = getFFScore(row, col); //there should be some neighbor smaller than it
+    byte small = -1;// = getFFScore(row, col); //there should be some neighbor smaller than it
     if (!returnState && (row == 7 || row == 8) && (col == 7 || col == 8)) {
       small = getFFScore(row, col);
       small --;
@@ -190,7 +190,7 @@ void calc(int x, int y, boolean returnState) {
     Serial.print(small);
 
     small++; //value that it should be
-    int curVal = getFFScore(row, col); //value that it is
+    byte curVal = getFFScore(row, col); //value that it is
 
     if(curVal != UNDEFINED && curVal == small) { 
       continue; 
@@ -253,7 +253,7 @@ void loop() {
     if (Serial.available() > 0) {
       char incomingBytes[2];
       Serial.readBytesUntil('\n', incomingBytes, 2);
-      int incomingVal = atoi(incomingBytes);
+      byte incomingVal = atoi(incomingBytes);
 
       if (incomingVal > 0 && incomingVal <= 15) {
         newWalls = incomingVal;
@@ -286,7 +286,7 @@ void loop() {
   val = getFFScore(x,y);
   //TIP: For first steps, go straight until there is more than one option. Then start updating floodfill.
   //See what the options are
-  for (int pow = 3; pow >= 0; pow--) { //check the four directions
+  for (byte pow = 3; pow >= 0; pow--) { //check the four directions
     dir = 1<<pow;
     Serial.print("Checking this direction: ");
     Serial.println(dir);
