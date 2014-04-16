@@ -1,3 +1,4 @@
+#include <IRsensor.h>
 #include <QueueList.h>
 #include <EEPROM.h>
 #include "sensors.h"
@@ -115,7 +116,7 @@ void loop() {
   if (getFFScore(x, y) == 0) {
     returnState = !returnState;
     if (returnState) {
-      Serial.print("flipping");
+      Serial.println("Flip");
       flipFFScore(returnState);
     } else { //this is where we've completed one run.
       //Write maze to EPPROM
