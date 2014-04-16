@@ -28,32 +28,32 @@ int qPeek() {
 }
 
 /* Returns the stored value at the specified point */
-int getArrVal(byte row, byte col) {
+int getArrVal(int row, int col) {
   return floodfillArr[row][col];
 }
 
 /* Sets the stored value at the specified point */
-void setArrVal(byte row, byte col, int val){
+void setArrVal(int row, int col, int val){
   floodfillArr[row][col] = val;
 }
 
 /* Returns the first 8 bits of the value at the specified point */
-byte getWalls(byte row, byte col) {
+int getWalls(int row, int col) {
   return (getArrVal(row, col) >> 8) & 15;
 }
 
 /* Returns the flood fill score */
-byte getFFScore(byte row, byte col) {
+int getFFScore(int row, int col) {
   return floodfillArr[row][col] & 255;
 }
 
 /* Sets the last half of the floodfill value (the computed score) */
-void setFFScore(byte row, byte col, byte score) {
+void setFFScore(int row, int col, int score) {
   setArrVal(row, col, (score & 255) | (getWalls(row, col) << 8));
 }
 
 /* Check if a wall in the given direction exists */
-bool wallExists(byte row, byte col, byte dir) {
+bool wallExists(int row, int col, int dir) {
   if ((row <= 0 && (dir==WEST)) || (col <= 0 && (dir == SOUTH)) || (row >= LENGTH-1 && dir == EAST) || (col >= LENGTH -1 && dir == NORTH)) {
     return true;
   } 
@@ -64,12 +64,12 @@ bool wallExists(byte row, byte col, byte dir) {
 }
 
 /* Check if a new wall in the given direction exists */
-bool newWallExists(byte newWalls, byte dir) {
+bool newWallExists(int newWalls, int dir) {
   return (newWalls & (dir & 15)) > 0;
 }
 
 /* Sets wall value [0-15] of this coordinate point */
-void addNewWalls(byte row, byte col, byte walls) {
+void addNewWalls(int row, int col, int walls) {
   if (walls >= 0 && walls < 16) {
     setArrVal(row, col, (getFFScore(row, col) | ((getWalls(row,col) | walls) << 8)));
   }
@@ -89,18 +89,18 @@ void addNewWalls(byte row, byte col, byte walls) {
 }
 
 /* Calculates the index if the 2D array were flattened */
-int rowColToI(byte row, byte col) {
+int rowColToI(int row, int col) {
   return row + (LENGTH * col);
 }
 
 /* Sets row and col to the values in a 2D array given the index in a 1D array */
-void iToRowCol(byte &row, byte &col, int i) {
-  col = (byte) i / LENGTH;
+void iToRowCol(int &row, int &col, int i) {
+  col = (int) i / LENGTH;
   row = i - (col*16);
 }
 
 /* Set row and col to the coordinates in that direction */
-void getAdjacentCell(byte &row, byte &col, byte dir) {
+void getAdjacentCell(int &row, int &col, int dir) {
   //int subject = corner == 3 ? 1 : -1;
   //TODO: check sides - what if there is no adjacent cell?
   //technically should not be called when there is a wall on that side
@@ -121,21 +121,21 @@ void getAdjacentCell(byte &row, byte &col, byte dir) {
 }
 
 /* Bounds checking */
-void pushIfValid(byte x, byte y) {
+void pushIfValid(int x, int y) {
   if (x >= 0 && x < LENGTH && y >= 0 && y < LENGTH) {
     queue.push( rowColToI(x, y));
   }
 }
 
 /*For each cell in the queue, check that its value is 1+lowest neighbor. If not, set it and check its neighbors*/
-void calculateFFValues(byte x, byte y, boolean returnState) {
+void calculateFFValues(int x, int y, boolean returnState) {
   while(!queue.isEmpty()) {
-    byte i = queue.pop() & 255;//double-check
-    byte row, col;
+    int i = queue.pop() & 255;//double-check
+    int row, col;
     iToRowCol( row, col, i );
 
     // Get smallest neighbor
-    byte small = -1; //disclaimer: no cell in a credible maze should reach 255
+    int small = -1; //getFFScore(row, col); //there should be some neighbor smaller than it
     if (!returnState && (row == 7 || row == 8) && (col == 7 || col == 8)) {
       small = getFFScore(row, col);
       small--;
@@ -171,7 +171,7 @@ void calculateFFValues(byte x, byte y, boolean returnState) {
     }
 
     small++; //value that it should be
-    byte curVal = getFFScore(row, col); //value that it is
+    int curVal = getFFScore(row, col); //value that it is
 
     if(curVal != UNDEFINED && curVal == small) { 
       continue; 
@@ -203,7 +203,7 @@ void calculateFFValues(byte x, byte y, boolean returnState) {
 }
 
 /* Update values that need to be updated */
-void updateFloodfill(byte x, byte y, byte newWalls, boolean returnState) {
+void updateFloodfill(int x, int y, int newWalls, boolean returnState) {
 
   /*Adds the cell in question and cells whose walls have changed to queue*/
   queue.push(rowColToI(x, y));
@@ -229,8 +229,8 @@ void updateFloodfill(byte x, byte y, byte newWalls, boolean returnState) {
 
 /* Initial starting maze values */
 void initializeFloodfill(boolean returnState) {
-  for(byte i = 0; i < LENGTH; i++) {
-    for(byte j = 0; j < LENGTH; j++) {
+  for(int i = 0; i < LENGTH; i++) {
+    for(int j = 0; j < LENGTH; j++) {
       setArrVal(i, j, UNDEFINED);
     }
   }
@@ -248,8 +248,8 @@ void initializeFloodfill(boolean returnState) {
 
 /* Sets (0,0) to be the goal state and recalculates floodfill values */
 void flipFFScore(boolean returnState) {
-  for(byte i = 0; i < LENGTH; i++) {
-    for(byte j = 0; j < LENGTH; j++) {
+  for(int i = 0; i < LENGTH; i++) {
+    for(int j = 0; j < LENGTH; j++) {
       setFFScore(i, j, UNDEFINED);
     }
   }
@@ -260,16 +260,16 @@ void flipFFScore(boolean returnState) {
 
 /* Read values stored in EEPROM */
 void readMazeFromMem() {
-  for (byte mazei = 0; mazei < LENGTH; mazei++) {
-    for (byte mazej = 0; mazej < LENGTH; mazej++) 
+  for (int mazei = 0; mazei < LENGTH; mazei++) {
+    for (int mazej = 0; mazej < LENGTH; mazej++) 
       addNewWalls(mazei, mazej, EEPROM.read(rowColToI(mazei, mazej)));
   }
 }
 
 /* Writes walls to EEPROM. If only checks for what is 0, might overlap with previously saved info */
 void writeMazeToMem() {
-  for (byte mazei = 0; mazei < LENGTH; mazei++) {
-    for (byte mazej = 0; mazej < LENGTH; mazej++) 
+  for (int mazei = 0; mazei < LENGTH; mazei++) {
+    for (int mazej = 0; mazej < LENGTH; mazej++) 
       EEPROM.write(rowColToI(mazei, mazej), getWalls(mazei, mazej));
   }
 }
