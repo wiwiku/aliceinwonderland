@@ -243,7 +243,6 @@ void initializeFloodfill(boolean returnState) {
 
   //set the initial cell values
   updateFloodfill(7, 7, 12, returnState);
-  //calculateFFValues(7,7, returnState);
 }
 
 /* Sets (0,0) to be the goal state and recalculates floodfill values */
@@ -255,7 +254,6 @@ void flipFFScore(boolean returnState) {
   }
   setFFScore(0,0,0);
   updateFloodfill(0,0,3, returnState);
-  //calculateFFValues(7,7, returnState);
 }
 
 /* Read values stored in EEPROM */

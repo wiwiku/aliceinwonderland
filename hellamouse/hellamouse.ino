@@ -105,7 +105,6 @@ void initializeThings() {
   //If we shouldn't read from mem, mem should be cleared outside of this program
   curRun = readMazeFromMem();
   initializeFloodfill(returnState);
-  
   if (DEBUG) { 
     printMazeInfo(0,0); 
   }
@@ -116,12 +115,14 @@ void loop() {
   if (getFFScore(x, y) == 0) {
     returnState = !returnState;
     if (returnState) {
+      Serial.print("flipping");
       flipFFScore(returnState);
     } else { //this is where we've completed one run.
       //Write maze to EPPROM
       curRun++;
       writeMazeToMem(curRun);
       initializeFloodfill(returnState);
+      Serial.println("Done");
     }
   }
 
@@ -137,8 +138,8 @@ void loop() {
 //  } 
 
   if (DEBUG) {
-    Serial.println("Input: ");
-    delay(3000);
+    Serial.println("In:");
+    delay(1000);
     if (Serial.available() > 0) {
       char incomingBytes[2];
       Serial.readBytesUntil('\n', incomingBytes, 2);
