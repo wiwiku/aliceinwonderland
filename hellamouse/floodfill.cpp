@@ -1,4 +1,5 @@
 #include <QueueList.h>
+#include <EEPROM.h>
 #include "core.h"
 
 /* row is the x-value, col is the y-value */
@@ -138,28 +139,30 @@ void calculateFFValues(int x, int y, boolean returnState) {
     if (!returnState && (row == 7 || row == 8) && (col == 7 || col == 8)) {
       small = getFFScore(row, col);
       small--;
-    } else if (returnState && (row == 0) && (col == 0)) {
+    } 
+    else if (returnState && (row == 0) && (col == 0)) {
       small = getFFScore(row, col);
       small--;
-    }  else {
+    }  
+    else {
       if(!wallExists(row, col, EAST)) {
         if (small == -1 || getFFScore(row+1, col) < small) {
           small = getFFScore(row+1, col);
         }
       }
-  
+
       if(!wallExists(row, col, NORTH)) {
         if (small == -1 || getFFScore(row, col+1) < small) {
           small = getFFScore(row, col+1);
         }
       }
-  
+
       if(!wallExists(row, col, WEST)) {
         if (small == -1 || getFFScore(row-1, col) < small) {
           small = getFFScore(row-1, col);
         }
       }
-  
+
       if(!wallExists(row, col, SOUTH)) {
         if (small == -1 || getFFScore(row, col-1) < small) {
           small = getFFScore(row, col-1);
@@ -221,7 +224,7 @@ void updateFloodfill(int x, int y, int newWalls, boolean returnState) {
   if(newWallExists(newWalls, SOUTH) || getFFScore(x, y-1) == UNDEFINED) {
     pushIfValid(x, y-1);
   }
-   calculateFFValues(x, y, returnState);
+  calculateFFValues(x, y, returnState);
 }
 
 /* Initial starting maze values */
@@ -255,4 +258,19 @@ void flipFFScore(boolean returnState) {
   //calculateFFValues(7,7, returnState);
 }
 
+/* Read values stored in EEPROM */
+void readMazeFromMem() {
+  for (int mazei = 0; mazei < LENGTH; mazei++) {
+    for (int mazej = 0; mazej < LENGTH; mazej++) 
+      addNewWalls(mazei, mazej, EEPROM.read(rowColToI(mazei, mazej)));
+  }
+}
+
+/* Writes walls to EEPROM. If only checks for what is 0, might overlap with previously saved info */
+void writeMazeToMem() {
+  for (int mazei = 0; mazei < LENGTH; mazei++) {
+    for (int mazej = 0; mazej < LENGTH; mazej++) 
+      EEPROM.write(rowColToI(mazei, mazej), getWalls(mazei, mazej));
+  }
+}
 

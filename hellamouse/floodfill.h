@@ -12,6 +12,8 @@ void getAdjacentCell(int &row, int &col, int dir);
 int updateFloodfill(int row, int col, int newWalls, boolean returnState);
 void flipFFScore(boolean returnState);
 void pushIfValid(int x, int y);
+void readMazeFromMem();
+void writeMazeToMem();
 
 // Queue accessor methods for debugging
 boolean qEmpty();

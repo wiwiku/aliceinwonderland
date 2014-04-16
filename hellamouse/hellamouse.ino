@@ -1,4 +1,5 @@
 #include <QueueList.h>
+#include <EEPROM.h>
 #include "sensors.h"
 #include "core.h"
 #include "floodfill.h"
@@ -97,6 +98,8 @@ void printMazeInfo() {
 }
 
 void initializeThings() {
+  //If we shouldn't read from mem, mem should be cleared outside of this program
+  readMazeFromMem();
   initializeFloodfill(returnState);
   calc(7,7,returnState);
   
@@ -227,6 +230,8 @@ void loop() {
       Serial.println("Goal");
     } else {
       //this is where we've completed one run. need to save maze and keep running....
+      //Write maze to EPPROM
+      writeMazeToMem();
       return;
     }
   }
