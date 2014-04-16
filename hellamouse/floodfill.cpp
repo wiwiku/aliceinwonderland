@@ -231,7 +231,7 @@ void updateFloodfill(int x, int y, int newWalls, boolean returnState) {
 void initializeFloodfill(boolean returnState) {
   for(int i = 0; i < LENGTH; i++) {
     for(int j = 0; j < LENGTH; j++) {
-      setArrVal(i, j, UNDEFINED);
+      setFFScore(i, j, UNDEFINED);
     }
   }
 

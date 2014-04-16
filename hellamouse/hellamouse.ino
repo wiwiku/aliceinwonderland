@@ -101,7 +101,7 @@ void initializeThings() {
   //If we shouldn't read from mem, mem should be cleared outside of this program
   readMazeFromMem();
   initializeFloodfill(returnState);
-  calc(7,7,returnState);
+  //calc(7,7,returnState);
   
   if (DEBUG) { 
     printMazeInfo(); 
@@ -232,7 +232,7 @@ void loop() {
       //this is where we've completed one run. need to save maze and keep running....
       //Write maze to EPPROM
       writeMazeToMem();
-      return;
+      initializeFloodfill(returnState);
     }
   }
 
