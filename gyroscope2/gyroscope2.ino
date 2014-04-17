@@ -68,26 +68,28 @@ volatile int accumulatedDegrees = 0;
 
 int prevZRate = 0;
 
-#define LOW_FILTER 5
+#define LOW_FILTER 3
 #define UPDATE_GYRO 10 //in milliseconds
 #define GYRO_CALIBRATION 2.61
 #define SAMPLE_RATE 10
 #define GYRO_OFFSET 7
 #define LEFT 20
 #define RIGHT 5
-#define MAXPWM 5
-#define MINPWM 5
+#define MAXPWM 8
+#define MINPWM 0
 #define MARGIN_ERROR 30
 #define ZERO_MARGIN 1
 
-#define gyroK 1
-#define gyroKd 0
+#define gyroK 1 //2
+#define gyroKd 0 //1.4
 
-
+#define FAST_TURN 0
+#define SLOW_STEADY 1
+int gyroState = FAST_TURN;
 
 int errorDegree = 0;
 int previousDegreeError = 0;
-int refDegree = 90;
+int refDegree = -180;
 int pwmLeft = 0;
 int pwmRight = 0;
 
@@ -95,6 +97,7 @@ int gyro_offset = 0;
 int zRate = 0;
 int LEDPIN = 13;
 
+boolean stopEverything = false;
 
 //RateAxz = (AdcGyroXZ * Vref / 1023 - VzeroRate) / Sensitivity Eq.3
 //RateAyz = (AdcGyroYZ * Vref / 1023 - VzeroRate) / Sensitivity
@@ -137,36 +140,11 @@ void setup() {
   // enable timer compare interrupt
   TIMSK0 |= (1 << OCIE0A);
   sei();
-
-  /*
-  // initialize Timer1
-  cli();          // disable global interrupts
-  TCCR0A = 0;     // set entire TCCR0A register to 0
-  TCCR0B = 0;     // same for TCCR0B
-  
-  // set compare match register to desired timer count:
-  OCR0A = 314;
-  
-  // turn on CTC mode:
-  TCCR0B |= (1 << WGM12);
-  
-  // Set CS10 and CS12 bits for 1024 prescaler:
-  TCCR0B |= (1 << CS02);
-  TCCR0B |= (1 << CS00);
-  
-  // enable timer compare interrupt:
-  TIMSK0 |= (1 << OCIE0A);
-  
-  // enable global interrupts:
-  sei();
-  */
-  
-
 }
 
 ISR(TIMER0_COMPA_vect)
 {
-  digitalWrite(LEDPIN, !digitalRead(LEDPIN));
+  //digitalWrite(LEDPIN, !digitalRead(LEDPIN));
   if (abs(zRate) > LOW_FILTER) {
     degreesChanged += zRate*SAMPLE_RATE; //rate * time in ms * 1 s / 1000 ms 
   }
@@ -174,51 +152,18 @@ ISR(TIMER0_COMPA_vect)
 
 void loop() {
  
+      
       long difference = millis() - previousTime;      
       zRate = gyro.readZ() - zOff;
-
-      /*
-      if (difference > UPDATE_GYRO) { // 10 millisecond passed
-        zRate = gyro.readZ() - zOff;
-        if (abs(zRate) > LOW_FILTER) {
-          degreesChanged += (zRate*SAMPLE_RATE); //rate * time in ms * 1 s / 1000 ms 
-        }
-     
-     if (abs(prevZRate) > LOW_FILTER) {   
-       
-       int numSamples = (difference/SAMPLE_RATE)-2; //subtract top and bottom value
-       
-       if (numSamples < 0) {
-         numSamples = 0;  
-       } 
-       
-       //Serial.println(numSamples);
-       if (numSamples != 0) {
-         int errorZRate = (zRate - prevZRate)/numSamples;
-         //Serial.println(errorZRate);
-
-         for (int i = 1; i <= numSamples; i++) { 
-            //degreesChanged += ((prevZRate)*SAMPLE_RATE);
-            degreesChanged += ((prevZRate + i*errorZRate)*SAMPLE_RATE);
-         }
-       }
-     }
-    
-     */
      
      actualDegreesChanged = degreesChanged/1000;
      errorDegree = refDegree - actualDegreesChanged; 
      int diffDegree = errorDegree - previousDegreeError;
+     pwmLeft = 5;
+     pwmRight = -5;
      
-     if (abs(errorDegree) <= ZERO_MARGIN) {
-        pwmRight = 0;
-        pwmLeft = 0;
-        digitalWrite(ain2, HIGH);
-        digitalWrite(ain1, HIGH);
-        digitalWrite(bin2, HIGH);
-        digitalWrite(bin1, HIGH);
-        
-     } else if (errorDegree > 0) {
+     /*
+     if (errorDegree > 0) {
       pwmRight = errorDegree*gyroK + diffDegree*gyroKd;
       if (pwmRight < MINPWM) {
         pwmRight = MINPWM; 
@@ -249,23 +194,23 @@ void loop() {
       
     
     }
+    */
     
-
-  
-  //  Serial.println("PWM LEFT: " + String(pwmLeft) + "; PWM RIGHT: " + String(pwmRight));
-  
-      if (analogRead(7) > 1000) {
+      //  Serial.println("PWM LEFT: " + String(pwmLeft) + "; PWM RIGHT: " + String(pwmRight));
+     if (abs(errorDegree) <= ZERO_MARGIN || stopEverything) {
+       umouse.shortbrake();
+       stopEverything = true;
+     } else if (analogRead(7) > 1000) {
         umouse.stop();   
       } else {
         umouse.setPWM(pwmLeft, pwmRight);
       }
-     
     //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms        
-      Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";degreesChanged " + String(degreesChanged) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
+     // Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";degreesChanged " + String(degreesChanged) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
       previousDegreeError = errorDegree;
       prevZRate = zRate;
       previousTime = millis();
-      
+     
    //}
   //Wait 10ms before reading the values again. (Remember, the output rate was set to 100hz and 1reading per 10ms = 100hz.)
 }
