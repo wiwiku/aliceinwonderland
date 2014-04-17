@@ -4,6 +4,9 @@
 #include "Encoder.h"
 #include "IRsensor.h"
 
+#include <avr/interrupt.h>
+#include <avr/io.h>
+
 // *** Constants ***
 // IR (Analog)
 const int left = A3;
@@ -61,19 +64,37 @@ int xOff, yOff, zOff = 0;
 long previousTime = 0;
 long degreesChanged = 0;
 int actualDegreesChanged = 0;
-int accumulatedDegrees = 0;
+volatile int accumulatedDegrees = 0;
 
 int prevZRate = 0;
 
 #define LOW_FILTER 5
 #define UPDATE_GYRO 10 //in milliseconds
 #define GYRO_CALIBRATION 2.61
-#define SAMPLE_RATE 1
-#define GYRO_OFFSET 50
+#define SAMPLE_RATE 10
+#define GYRO_OFFSET 7
 #define LEFT 20
 #define RIGHT 5
+#define MAXPWM 5
+#define MINPWM 5
+#define MARGIN_ERROR 30
+#define ZERO_MARGIN 1
+
+#define gyroK 1
+#define gyroKd 0
+
+
+
+int errorDegree = 0;
+int previousDegreeError = 0;
+int refDegree = 90;
+int pwmLeft = 0;
+int pwmRight = 0;
 
 int gyro_offset = 0;
+int zRate = 0;
+int LEDPIN = 13;
+
 
 //RateAxz = (AdcGyroXZ * Vref / 1023 - VzeroRate) / Sensitivity Eq.3
 //RateAyz = (AdcGyroYZ * Vref / 1023 - VzeroRate) / Sensitivity
@@ -93,42 +114,76 @@ void setup() {
   gyro.configureSampleRate(9);
 
   zOff = gyro.readZ();
-  umouse.setPWM(LEFT, RIGHT);
+  umouse.setPWM(pwmLeft, pwmRight);
   if (LEFT > RIGHT) {
     gyro_offset = LEFT/RIGHT;  
   } else {
     gyro_offset = RIGHT/LEFT;  
   }
+  
+  
+  cli();          // disable global interrupts
+
+  //set timer0 interrupt at 2kHz
+  TCCR0A = 0;// set entire TCCR0A register to 0
+  TCCR0B = 0;// same for TCCR0B
+  TCNT0  = 0;//initialize counter value to 0
+  // set compare match register for 2khz increments
+  OCR0A = 155;// = (16*10^6) / (2000*64) - 1 (must be <256)
+  // turn on CTC mode
+  TCCR0A |= (1 << WGM01);
+  // Set CS01 and CS00 bits for 64 prescaler
+  TCCR0B |= (1 << CS02) | (1 << CS00);   
+  // enable timer compare interrupt
+  TIMSK0 |= (1 << OCIE0A);
+  sei();
+
+  /*
+  // initialize Timer1
+  cli();          // disable global interrupts
+  TCCR0A = 0;     // set entire TCCR0A register to 0
+  TCCR0B = 0;     // same for TCCR0B
+  
+  // set compare match register to desired timer count:
+  OCR0A = 314;
+  
+  // turn on CTC mode:
+  TCCR0B |= (1 << WGM12);
+  
+  // Set CS10 and CS12 bits for 1024 prescaler:
+  TCCR0B |= (1 << CS02);
+  TCCR0B |= (1 << CS00);
+  
+  // enable timer compare interrupt:
+  TIMSK0 |= (1 << OCIE0A);
+  
+  // enable global interrupts:
+  sei();
+  */
+  
+
+}
+
+ISR(TIMER0_COMPA_vect)
+{
+  digitalWrite(LEDPIN, !digitalRead(LEDPIN));
+  if (abs(zRate) > LOW_FILTER) {
+    degreesChanged += zRate*SAMPLE_RATE; //rate * time in ms * 1 s / 1000 ms 
+  }
 }
 
 void loop() {
  
-  //Create variables to hold the output rates.
-  int xRate, yRate, zRate;
-  //Read the x,y and z output rates from the gyroscope.
-  zRate = gyro.readZ() - zOff;
-  //Print the output rates to the terminal, seperated by a TAB character.
-//  Serial.print(xRate);
-//  Serial.print('\t');
-//  Serial.print(yRate);
-//  Serial.print('\t');
-//  Serial.println(zRate);  
-  
-  if (analogRead(7) > 1000) {
-    umouse.stop();   
-  } else {
-    if (abs(actualDegreesChanged) > 90) {
-      umouse.stop();
-    } 
-  }
-  
-  long difference = millis() - previousTime;      
-  if (difference > UPDATE_GYRO) { // 10 millisecond passed
-    if (abs(zRate) > LOW_FILTER) {
-      degreesChanged += (zRate*SAMPLE_RATE); //rate * time in ms * 1 s / 1000 ms 
-    }
-    
-    
+      long difference = millis() - previousTime;      
+      zRate = gyro.readZ() - zOff;
+
+      /*
+      if (difference > UPDATE_GYRO) { // 10 millisecond passed
+        zRate = gyro.readZ() - zOff;
+        if (abs(zRate) > LOW_FILTER) {
+          degreesChanged += (zRate*SAMPLE_RATE); //rate * time in ms * 1 s / 1000 ms 
+        }
+     
      if (abs(prevZRate) > LOW_FILTER) {   
        
        int numSamples = (difference/SAMPLE_RATE)-2; //subtract top and bottom value
@@ -143,20 +198,75 @@ void loop() {
          //Serial.println(errorZRate);
 
          for (int i = 1; i <= numSamples; i++) { 
-            //degreesChanged += ((zRate)*SAMPLE_RATE);
+            //degreesChanged += ((prevZRate)*SAMPLE_RATE);
             degreesChanged += ((prevZRate + i*errorZRate)*SAMPLE_RATE);
          }
        }
      }
-//     
+    
+     */
+     
      actualDegreesChanged = degreesChanged/1000;
+     errorDegree = refDegree - actualDegreesChanged; 
+     int diffDegree = errorDegree - previousDegreeError;
+     
+     if (abs(errorDegree) <= ZERO_MARGIN) {
+        pwmRight = 0;
+        pwmLeft = 0;
+        digitalWrite(ain2, HIGH);
+        digitalWrite(ain1, HIGH);
+        digitalWrite(bin2, HIGH);
+        digitalWrite(bin1, HIGH);
+        
+     } else if (errorDegree > 0) {
+      pwmRight = errorDegree*gyroK + diffDegree*gyroKd;
+      if (pwmRight < MINPWM) {
+        pwmRight = MINPWM; 
+      } else if (pwmRight > MAXPWM) {
+        pwmRight = MAXPWM; 
+      }
+      
+      if (errorDegree < MARGIN_ERROR) {
+        pwmLeft = 0; 
+      } else {
+        pwmLeft = MINPWM;    
+      } 
+      
+
+    } else {
+      pwmLeft = (-1 * errorDegree * gyroK) + diffDegree*gyroKd; 
+      if (pwmLeft < MINPWM ) {
+        pwmLeft = MINPWM;
+      } else if (pwmLeft > MAXPWM) {
+        pwmLeft = MAXPWM;  
+      }
+      
+      if (abs(errorDegree) < MARGIN_ERROR) {
+        pwmRight = 0; 
+      } else {
+        pwmRight = MINPWM;    
+      } 
+      
+    
+    }
+    
+
+  
+  //  Serial.println("PWM LEFT: " + String(pwmLeft) + "; PWM RIGHT: " + String(pwmRight));
+  
+      if (analogRead(7) > 1000) {
+        umouse.stop();   
+      } else {
+        umouse.setPWM(pwmLeft, pwmRight);
+      }
+     
     //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms        
       Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";degreesChanged " + String(degreesChanged) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
+      previousDegreeError = errorDegree;
       prevZRate = zRate;
       previousTime = millis();
       
-   }
-
- 
+   //}
   //Wait 10ms before reading the values again. (Remember, the output rate was set to 100hz and 1reading per 10ms = 100hz.)
 }
+
