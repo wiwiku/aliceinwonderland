@@ -13,13 +13,13 @@
 
 class IRsensor {
 public:
-    IRsensor(int pin, double c1, double c2, double thresCm);
-    double getVal();
-    double getCm();
+    IRsensor(int pin, float c1, float c2, float thresCm);
+    float getVal();
+    float getCm();
     boolean hasWall();
 private:
     int _pin;
-    double _c1, _c2, _thresCm;
+    float _c1, _c2, _thresCm;
 };
 
 #endif

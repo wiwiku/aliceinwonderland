@@ -16,7 +16,7 @@ public:
     Encoder(int wheelDiameterMM);
     unsigned long getPrevTime();
     unsigned long setTime(unsigned long t);
-    double getSpeed(unsigned long tMicros);
+    float getSpeed(unsigned long tMicros);
 private:
     int _dia;
     unsigned long _prevtime;
