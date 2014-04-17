@@ -18,7 +18,7 @@ public:
     int getPWMA();
     int getPWMB();
     void stop();
-    void shortbrake();
+    void brake();
 private:
     int _a1, _a2, _pwmapin, _pwma, _b1, _b2, _pwmbpin, _pwmb;
 };

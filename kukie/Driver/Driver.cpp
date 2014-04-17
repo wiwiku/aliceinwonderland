@@ -61,7 +61,7 @@ void Driver::stop() {
     setPWM(0, 0);
 }
 
-void Driver::shortbrake() {
+void Driver::brake() {
     digitalWrite(_a1, HIGH);
     digitalWrite(_a2, HIGH);
     analogWrite(_pwmapin, 0);
