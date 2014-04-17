@@ -60,3 +60,12 @@ int Driver::getPWMB() {
 void Driver::stop() {
     setPWM(0, 0);
 }
+
+void Driver::shortbrake() {
+    digitalWrite(_a1, HIGH);
+    digitalWrite(_a2, HIGH);
+    analogWrite(_pwmapin, 0);
+    digitalWrite(_b1, HIGH);
+    digitalWrite(_b2, HIGH);
+    analogWrite(_pwmbpin, 0);
+}

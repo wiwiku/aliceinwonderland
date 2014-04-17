@@ -9,18 +9,18 @@
 #include "Arduino.h"
 #include "IRsensor.h"
 
-IRsensor::IRsensor(int pin, double c1, double c2, double thresCm) {
+IRsensor::IRsensor(int pin, float c1, float c2, float thresCm) {
     _pin = pin;
     _c1 = c1;
     _c2 = c2;
     _thresCm = thresCm;
 }
 
-double IRsensor::getVal() {
+float IRsensor::getVal() {
     return analogRead(_pin);
 }
 
-double IRsensor::getCm() {
+float IRsensor::getCm() {
     return pow((analogRead(_pin)/_c1), (1/_c2));
 }
 

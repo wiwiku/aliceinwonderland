@@ -135,7 +135,7 @@ void calculateFFValues(int x, int y, boolean returnState) {
     iToRowCol( row, col, i );
 
     // Get smallest neighbor
-    int small = -1; //getFFScore(row, col); //there should be some neighbor smaller than it
+    byte small = -1; //getFFScore(row, col); //there should be some neighbor smaller than it
     if (!returnState && (row == 7 || row == 8) && (col == 7 || col == 8)) {
       small = getFFScore(row, col);
       small--;

@@ -1,136 +1,86 @@
-#include <IRsensor.h>
-#include <Driver.h>
-#include <Encoder.h>
+#include "IRsensor.h"
+#include "Driver.h"
+#include "Encoder.h"
+#include "PID.h"
+#include "Top.h"
 
-// *** Constants ***
-// IR (Analog)
-const int left = A3;
-const int frontleft = A2;
-const int frontright = A1;
-const int right = A0;
-const int irThCm = 8;
+IRsensor lsensor(left, lc1, lc2, irThCm);
+IRsensor dlsensor(diagleft, dlc1, dlc2, irThCm);
+IRsensor flsensor(frontleft, flc1, flc2, irThCm);
+IRsensor frsensor(frontright, frc1, frc2, irThCm);
+IRsensor drsensor(diagright, drc1, drc2, irThCm);
+IRsensor rsensor(right, rc1, rc2, irThCm);
 
-const float lc1 = 1123.1;
-const float lc2 = -1.201;
-const float flc1 = 1093.8;
-const float flc2 = -1.257;
-const float frc1 = 1010.0;
-const float frc2 = -1.168;
-const float rc1 = 897.89;
-const float rc2 = -1.178;
-
-IRsensor lsense(left, lc1, lc2, irThCm);
-IRsensor flsense(frontleft, flc1, flc2, irThCm);
-IRsensor frsense(frontright, frc1, frc2, irThCm);
-IRsensor rsense(right, rc1, rc2, irThCm);
-
-// Speed (Analog)
-const int dwheelmm = 32;
-const int leftwheel = 0; // D2 pin (interrupt 0)
-const int rightwheel = 1; // D3 pin (interrupt 1)
-
-Encoder enc(dwheelmm);
-
-// Drive (Digital)
-const int ain1 =  13;
-const int ain2 =  12;
-const int pwma =  10;
-const int bin1 =  6;
-const int bin2 =  7;
-const int pwmb =  11;
+Encoder lenc(dwheelmm);
 
 Driver umouse(ain1, ain2, pwma, bin1, bin2, pwmb);
 
-// PID
-const double kp = 0.3;
-const double kd = 0.1;
-double ep, prevep, ed;
-double rawpterm, rawdterm;
-int pidterm;
+PID pid(kp, kd);
 
-// *** Variables ***
-volatile unsigned long edge = 0;
 int pwmIncr = 10;
 
 void setup() {
   Serial.begin(9600);
-  enc.setTime(micros());
-  //attachInterrupt(leftwheel, increment, RISING);
+  attachInterrupt(leftwheel, increment, RISING);
 }
 
 void loop()
 {
-  //pid(); 
   /*
   Serial.println(enc.getSpeed(micros()));
   int sp = (analogRead(7) > 1000) ? 10 : 0;
   umouse.setPWM(sp, sp);
  */
- 
-  irdistlib();
+  //pidlib();
+  //irdistlib();
   //enclib();
   //drivelib();
-}
-
-void pid() {
-  //Serial.println(enc.getSpeed(micros()));
-  if (analogRead(7) > 1000) {
-    double lcm = flsense.getCm();
-    double rcm = frsense.getCm();
-    /*
-    Serial.print(lcm);
-    Serial.print("\t");
-    Serial.print(rcm);
-    Serial.print("\t");
-    */
-    ep = (lcm < 15 && rcm < 15) ? lcm - rcm : 0;
-    rawpterm = kp * ep;
-    ed = ep - prevep;
-    rawdterm = kd * ed;
-    pidterm = floor(rawpterm + rawdterm);
-    int lpwm = 70 - pidterm;
-    int rpwm = 70 + pidterm;
-    umouse.setPWM(lpwm, rpwm);
-  } else {
-    umouse.setPWM(0, 0);
-  }
-  /*
-  Serial.print(umouse.getPWMA());
-  Serial.print("\t");
-  Serial.println(umouse.getPWMB());
-  */
 }
 
 void increment() {
   edge++;
 }
 
+void pidlib() {
+  double lcm = flsensor.getCm();
+  double rcm = frsensor.getCm();
+  int pidout = floor(pid.getPIDterm(lcm, rcm));
+}
+
 void irdistlib() {
     // IR
   Serial.print("Distance:\t");
-  Serial.print(lsense.getCm());
+  Serial.print(lsensor.getCm());
   Serial.print("\t");
-  Serial.print(flsense.getCm()); 
+  Serial.print(dlsensor.getCm());
   Serial.print("\t");
-  Serial.print(frsense.getCm()); 
+  Serial.print(flsensor.getCm()); 
   Serial.print("\t");
-  Serial.println(rsense.getCm());
+  Serial.print(frsensor.getCm()); 
+  Serial.print("\t");
+  Serial.print(drsensor.getCm()); 
+  Serial.print("\t");
+  Serial.println(rsensor.getCm());
 }
 
 void irdistvallib() {
     // IR
   Serial.print("Distance:\t");
-  Serial.print(lsense.getVal());
+  Serial.print(lsensor.getVal());
   Serial.print("\t");
-  Serial.print(flsense.getVal()); 
+  Serial.print(dlsensor.getVal());
   Serial.print("\t");
-  Serial.print(frsense.getVal()); 
+  Serial.print(flsensor.getVal()); 
   Serial.print("\t");
-  Serial.println(rsense.getVal());
+  Serial.print(frsensor.getVal()); 
+  Serial.print("\t");
+  Serial.print(drsensor.getVal()); 
+  Serial.print("\t");
+  Serial.println(rsensor.getVal());
 }
 
 void enclib() {
-  Serial.println(enc.getSpeed(micros()));
+  Serial.println(lenc.getSpeed(micros()));
 }
 
 void drivelib() {

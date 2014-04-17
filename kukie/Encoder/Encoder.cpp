@@ -11,7 +11,7 @@
 
 Encoder::Encoder(int wheelDiameterMM) {
     _dia = wheelDiameterMM;
-    _prevtime = 0;
+    _prevtime = micros();
 }
 
 unsigned long Encoder::getPrevTime() {
@@ -22,9 +22,9 @@ unsigned long Encoder::setTime(unsigned long t) {
     _prevtime = t;
 }
 
-double Encoder::getSpeed(unsigned long tMicros) {
+float Encoder::getSpeed(unsigned long tMicros) {
     extern unsigned long edge;
-    double speed = edge * (_dia / 10) * M_PI / 3 / 10 / ((double) (tMicros - _prevtime) / 1000000);
+    float speed = edge * (_dia / 10) * M_PI / 3 / 10 / ((float) (tMicros - _prevtime) / 1000000);
     _prevtime = tMicros;
     edge = 0;
     return speed;
