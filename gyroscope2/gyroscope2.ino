@@ -74,14 +74,16 @@ int prevZRate = 0;
 #define SAMPLE_RATE 10
 #define GYRO_OFFSET 7
 #define LEFT 20
-#define RIGHT 5
-#define MAXPWM 8
-#define MINPWM 0
+#define RIGHT 15
+#define TOPPWM 15;
+#define MINPWM 5
 #define MARGIN_ERROR 30
-#define ZERO_MARGIN 1
+#define ZERO_MARGIN 3
 
-#define gyroK 1 //2
-#define gyroKd 0 //1.4
+int MAXPWM = TOPPWM;
+
+#define gyroK 2 //2
+#define gyroKd 1.5 //1.4
 
 #define FAST_TURN 0
 #define SLOW_STEADY 1
@@ -89,7 +91,7 @@ int gyroState = FAST_TURN;
 
 int errorDegree = 0;
 int previousDegreeError = 0;
-int refDegree = -180;
+int refDegree = 90;
 int pwmLeft = 0;
 int pwmRight = 0;
 
@@ -151,18 +153,29 @@ ISR(TIMER0_COMPA_vect)
 }
 
 void loop() {
- 
-      
+  if (!stopEverything) {
+    turn(90);
+    turn(90);
+    stopEverything = true;
+  }    
+   //}
+  //Wait 10ms before reading the values again. (Remember, the output rate was set to 100hz and 1reading per 10ms = 100hz.)
+}
+
+void turn(int referenceDegree) {
+  boolean notComplete = true;
+  gyroState = FAST_TURN;
+  degreesChanged = 0;
+  MAXPWM = TOPPWM;
+  while(notComplete) {
       long difference = millis() - previousTime;      
       zRate = gyro.readZ() - zOff;
      
-     actualDegreesChanged = degreesChanged/1000;
-     errorDegree = refDegree - actualDegreesChanged; 
-     int diffDegree = errorDegree - previousDegreeError;
-     pwmLeft = 5;
-     pwmRight = -5;
+      actualDegreesChanged = degreesChanged/1000;
+      errorDegree = referenceDegree - actualDegreesChanged; 
+      int diffDegree = errorDegree - previousDegreeError;
      
-     /*
+          
      if (errorDegree > 0) {
       pwmRight = errorDegree*gyroK + diffDegree*gyroKd;
       if (pwmRight < MINPWM) {
@@ -194,24 +207,54 @@ void loop() {
       
     
     }
-    */
+     
+       switch(gyroState) {
+         case FAST_TURN: {
+           if (abs(errorDegree) <= refDegree/2) {
+             umouse.shortbrake();
+             MAXPWM = 6;
+             gyroState = SLOW_STEADY;
+           } else if (analogRead(7) > 1000) {
+                umouse.stop();
+            }  else {
+             umouse.setPWM(pwmLeft, pwmRight);  
+           }           
+           break;
+         
+          }
+     
+         case SLOW_STEADY: {
+          if (abs(errorDegree) <= ZERO_MARGIN) {
+             umouse.shortbrake();
+             notComplete = false;
+           } else if (analogRead(7) > 1000) {
+                umouse.stop();
+            }  else {
+             umouse.setPWM(pwmLeft, pwmRight);  
+           }           
+           break;
+         
+          }
+             
+       } 
+       
+     
+
+
     
-      //  Serial.println("PWM LEFT: " + String(pwmLeft) + "; PWM RIGHT: " + String(pwmRight));
-     if (abs(errorDegree) <= ZERO_MARGIN || stopEverything) {
-       umouse.shortbrake();
-       stopEverything = true;
-     } else if (analogRead(7) > 1000) {
-        umouse.stop();   
-      } else {
-        umouse.setPWM(pwmLeft, pwmRight);
-      }
-    //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms        
+    
+//      //  Serial.println("PWM LEFT: " + String(pwmLeft) + "; PWM RIGHT: " + String(pwmRight));
+//     if (abs(errorDegree) <= ZERO_MARGIN || stopEverything) {
+//       umouse.shortbrake();
+//       stopEverything = true;
+//     } else 
+//    //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms        
      // Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";degreesChanged " + String(degreesChanged) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
       previousDegreeError = errorDegree;
       prevZRate = zRate;
       previousTime = millis();
      
-   //}
-  //Wait 10ms before reading the values again. (Remember, the output rate was set to 100hz and 1reading per 10ms = 100hz.)
+  }
+  
 }
 
