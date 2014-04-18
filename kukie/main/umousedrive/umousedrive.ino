@@ -2,6 +2,9 @@
 #include "Driver.h"
 #include "Encoder.h"
 #include "PID.h"
+#include "Gyroscope.h"
+#include "Gyro.h"
+#include <Wire.h>
 #include "Top.h"
 
 IRsensor lsensor(left, lc1, lc2, irThSide);
@@ -33,6 +36,37 @@ void setup() {
   Serial.begin(9600);
   attachInterrupt(leftwheel, lincrement, RISING);
   attachInterrupt(rightwheel, rincrement, RISING);
+  
+  //Configure the gyroscope
+  //Set the gyroscope scale for the outputs to +/-2000 degrees per secon
+  gyro.configureDegree((DLPF_FS_SEL_0|DLPF_FS_SEL_1|DLPF_CFG_0));
+  gyro.configureSampleRate(9);
+
+  zOff = gyro.readZ();
+  umouse.setPWM(pwmLeft, pwmRight);
+  if (LEFT > RIGHT) {
+    gyro_offset = LEFT/RIGHT;  
+  } else {
+    gyro_offset = RIGHT/LEFT;  
+  }
+  
+    pinMode(SWITCH, INPUT);
+    
+  // initialize Timer1
+  cli();          // disable global interrupts
+  TCCR1A = 0;     // set entire TCCR1A register to 0
+  TCCR1B = 0;     // same for TCCR1B
+ 
+  // set compare match register to desired timer count:
+  OCR1A = 157;
+  // turn on CTC mode:
+  TCCR1B |= (1 << WGM12);
+  // Set CS10 and CS12 bits for 1024 prescaler:
+  TCCR1B |= (1 << CS10);
+  TCCR1B |= (1 << CS12);
+  // enable timer compare interrupt:
+  TIMSK1 |= (1 << OCIE1A);
+  sei();          // enable global interrupts
 }
 
 void loop()
@@ -46,7 +80,8 @@ void loop()
   //drivelib();
   //umouse.setPWM(10, 10);
   if (!done) {
-    driveForward(10*edgePerCm);
+    turn(-90);
+    //driveForward(10*edgePerCm);
     done = true;
   }
 //  Serial.print(ledge);
@@ -66,6 +101,15 @@ void lincrement() {
 
 void rincrement() {
   redge++;
+}
+
+//Update gyro's angle rate. 
+ISR(TIMER1_COMPA_vect)
+{
+  //digitalWrite(LEDPIN, !digitalRead(LEDPIN));
+  if (abs(zRate) > LOW_FILTER) {
+    degreesChanged += zRate*SAMPLE_RATE; //rate * time in ms * 1 s / 1000 ms 
+  }
 }
 
 // This function will drive the mouse forward for a specified number of edges.
@@ -200,4 +244,83 @@ void drivelib() {
       }
     }
   }
+}
+
+void switchMode(int mode) {
+  turnMode = mode;  
+}
+
+
+void turn(int ref) {
+  if (turnMode == SLOW) {
+    gyroK = 0.2;
+    gyroKd = 0.1;
+    minPWM = SLOWMIN;
+    maxPWM = SLOWMAX;  
+    gyroOffset = 4;
+    turnRatio = 4;
+  } else if (turnMode == FAST) {
+    gyroK =  0.8;
+    gyroKd = 0.5;
+  
+    minPWM = FASTMIN;
+    maxPWM = FASTMAX;
+    gyroOffset = 16;
+    turnRatio = 8;
+    
+  }
+  
+  int referenceDegree = 0;
+  if (ref > 0) {
+    referenceDegree = ref - gyroOffset; 
+  } else {
+    referenceDegree = ref + gyroOffset;       
+  }
+  boolean notComplete = true;
+  degreesChanged = 0;
+  while(notComplete) {
+      long difference = millis() - previousTime;      
+      zRate = gyro.readZ() - zOff;
+     
+      actualDegreesChanged = degreesChanged/1000;
+      errorDegree = referenceDegree - actualDegreesChanged; 
+      int dError = (errorDegree - previousDegreeError)/difference;
+
+     if (errorDegree > 0) {
+      pwmRight = errorDegree*gyroK + dError*gyroKd;
+      if (pwmRight < minPWM) {
+        pwmRight = minPWM; 
+      } else if (pwmRight > maxPWM) {
+        pwmRight = maxPWM; 
+      }      
+      pwmLeft = pwmRight/turnRatio;
+    } else {
+      pwmLeft = (-1 * errorDegree * gyroK) + dError*gyroKd; 
+      if (pwmLeft < minPWM ) {
+        pwmLeft = minPWM;
+      } else if (pwmLeft > maxPWM) {
+        pwmLeft = maxPWM;  
+      }
+      
+       pwmRight = pwmLeft/turnRatio;
+    
+    }
+  
+    if (abs(errorDegree) <= ZERO_MARGIN) {
+         umouse.brake();
+         notComplete = false;
+       } else if (digitalRead(SWITCH) == HIGH) {
+            umouse.stop();
+        }  else {
+         umouse.setPWM(pwmLeft, pwmRight);  
+       }           
+    
+//    //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms        
+      //Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";degreesChanged " + String(degreesChanged) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
+      previousDegreeError = errorDegree;
+      prevZRate = zRate;
+      previousTime = millis();
+     
+  }
+  
 }

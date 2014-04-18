@@ -118,13 +118,7 @@ void setup() {
     sei();          // enable global interrupts
 }
 
-ISR(TIMER1_COMPA_vect)
-{
-  //digitalWrite(LEDPIN, !digitalRead(LEDPIN));
-  if (abs(zRate) > LOW_FILTER) {
-    degreesChanged += zRate*SAMPLE_RATE; //rate * time in ms * 1 s / 1000 ms 
-  }
-}
+
 
 void loop() {
   if (!stopEverything) {
