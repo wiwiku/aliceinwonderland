@@ -9,6 +9,7 @@
 #include <avr/io.h>
 
 #include "Top.h"
+#include "Gyro.h"
 
 IRsensor lsensor(left, lc1, lc2, irThCm);
 IRsensor dlsensor(diagleft, dlc1, dlc2, irThCm);
@@ -37,6 +38,10 @@ Gyroscope gyro;
 
 #define MARGIN_ERROR 0
 #define ZERO_MARGIN 1
+
+#define GYROK_SLOW .2
+#define GYROKD_SLOW .1
+#define GYROK_FAST 
 
 float gyroK = .2; //2
 float gyroKd = .1; //1.4
@@ -72,7 +77,6 @@ int gyro_offset = 0;
 int zRate = 0;
 int LEDPIN = 13;
 int SWITCH = 10;
-
 
 boolean stopEverything = false;
 
@@ -191,54 +195,16 @@ void turn(int ref) {
        pwmRight = pwmLeft/turnRatio;
     
     }
-       /*
-       switch(gyroState) {
-         case FAST_TURN: {
-           if (abs(errorDegree) <= referenceDegree/2) {
-             umouse.brake();
-             maxPWM = 6;
-             gyroState = SLOW_STEADY;
-           } else if (digitalRead(SWITCH) == HIGH) {
-                umouse.stop();
-            }  else {
-             umouse.setPWM(pwmLeft, pwmRight);  
-           }           
-           break;
-         
-          }
-     
-         case SLOW_STEADY: {
-          if (abs(errorDegree) <= ZERO_MARGIN) {
-             umouse.brake();
-             notComplete = false;
-           } else if (digitalRead(SWITCH) == HIGH) {
-                umouse.stop();
-            }  else {
-             umouse.setPWM(pwmLeft, pwmRight);  
-           }           
-           break;
-         
-          }
-             
-       } */
-       
-     
-        if (abs(errorDegree) <= ZERO_MARGIN) {
-             umouse.brake();
-             notComplete = false;
-           } else if (digitalRead(SWITCH) == HIGH) {
-                umouse.stop();
-            }  else {
-             umouse.setPWM(pwmLeft, pwmRight);  
-           }           
-
+  
+    if (abs(errorDegree) <= ZERO_MARGIN) {
+         umouse.brake();
+         notComplete = false;
+       } else if (digitalRead(SWITCH) == HIGH) {
+            umouse.stop();
+        }  else {
+         umouse.setPWM(pwmLeft, pwmRight);  
+       }           
     
-    
-//      //  Serial.println("PWM LEFT: " + String(pwmLeft) + "; PWM RIGHT: " + String(pwmRight));
-//     if (abs(errorDegree) <= ZERO_MARGIN || stopEverything) {
-//       umouse.brake();
-//       stopEverything = true;
-//     } else 
 //    //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms        
       //Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";degreesChanged " + String(degreesChanged) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
       previousDegreeError = errorDegree;

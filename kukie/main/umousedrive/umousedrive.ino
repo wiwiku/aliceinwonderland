@@ -31,7 +31,7 @@ void loop()
   int sp = (analogRead(7) > 1000) ? 10 : 0;
   umouse.setPWM(sp, sp);
  */
-  //pidlib();
+  pidlib();
   //irdistlib();
   //enclib();
   //drivelib();
@@ -42,9 +42,18 @@ void increment() {
 }
 
 void pidlib() {
-  double lcm = flsensor.getCm();
-  double rcm = frsensor.getCm();
-  int pidout = floor(pid.getPIDterm(lcm, rcm));
+  if (flsensor.getCm() < 15 && frsensor.getCm() < 15) {
+    double lcm = flsensor.getCm();
+    double rcm = frsensor.getCm();
+    int pidout = floor(pid.getPIDterm(lcm, rcm));
+    umouse.setPWM(10 + pidout, 10 - pidout);
+    Serial.print(umouse.getPWMA());
+    Serial.print("\t");
+    Serial.println(umouse.getPWMB());
+  } else {
+    umouse.setPWM(10, 10);
+    Serial.println("no wall");
+  }
 }
 
 void irdistlib() {
