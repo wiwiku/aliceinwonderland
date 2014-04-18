@@ -19,7 +19,7 @@ public:
     float getSpeed(unsigned long tMicros);
 private:
     int _dia;
-    unsigned long _prevtime;
+    unsigned long _prevtime, _prevedge;
 };
 
 #endif
