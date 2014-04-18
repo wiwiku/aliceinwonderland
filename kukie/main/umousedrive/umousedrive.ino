@@ -18,52 +18,84 @@ Driver umouse(ain1, ain2, pwma, bin1, bin2, pwmb);
 PID pid(kp, kd);
 
 float arr[30];
-int arrlen = 0;
+int arrlen = -1;
 int arrlimit = 10;
+unsigned long startedge = 0;
+
+boolean done = false;
+volatile boolean goingforward = false;
+
+volatile unsigned long stopEdge = 0;
 
 int pwmIncr = 10;
 
 void setup() {
   Serial.begin(9600);
-  attachInterrupt(leftwheel, increment, RISING);
+  attachInterrupt(leftwheel, lincrement, RISING);
+  attachInterrupt(rightwheel, rincrement, RISING);
 }
 
 void loop()
 {
 
-  int cm = 90;
-  driveForward(cm * edgePerCm);
+  //int cm = 90;
+  //driveForward(cm * edgePerCm);
   //pidlib();
-  //irwalllib();
+  //irdistlib();
   //enclib();
   //drivelib();
+  //umouse.setPWM(10, 10);
+  if (!done) {
+    driveForward(10*edgePerCm);
+    done = true;
+  }
+//  Serial.print(ledge);
+//  Serial.print("\t");
+//  Serial.println(redge);
 }
 
-void increment() {
-  edge++;
+void lincrement() {
+  ledge++;
+  if (goingforward) {
+    if (ledge >= stopEdge) {
+      umouse.brake();
+      goingforward = false;
+    }
+  }
+}
+
+void rincrement() {
+  redge++;
 }
 
 // This function will drive the mouse forward for a specified number of edges.
 void driveForward(unsigned long deltaEdge) {
-  unsigned long stopEdge = edge + deltaEdge;
-  while (edge < stopEdge) {
+  stopEdge = ledge + deltaEdge;
+  goingforward = true;
+  while (goingforward) {
     if (lsensor.hasWall() && rsensor.hasWall()) { // do pid
-      double lcm = flsensor.getCm();
-      double rcm = frsensor.getCm();
+      double lcm = dlsensor.getCm();
+      double rcm = drsensor.getCm();
       int pidout = floor(pid.getPIDterm(lcm, rcm));
       umouse.setPWM(forwardSpeed - pidout, forwardSpeed + pidout);
     } else {
       umouse.setPWM(forwardSpeed, forwardSpeed);
     }
   }
+  umouse.brake();
+  Serial.print(deltaEdge);
+  Serial.print("\t");
+  Serial.print(ledge);
+  Serial.print("\t");
+  Serial.println(stopEdge);
 }
 
 void pidlib() {
 
   int basespeed = 10;
-  if (lsensor.hasWall() && rsensor.hasWall()) {
-    double lcm = flsensor.getCm();
-    double rcm = frsensor.getCm();
+  if (dlsensor.hasWall() && drsensor.hasWall()) {
+    double lcm = dlsensor.getCm();
+    double rcm = drsensor.getCm();
     int pidout = floor(pid.getPIDterm(lcm, rcm));
     umouse.setPWM(basespeed - pidout, basespeed + pidout);
     Serial.print(umouse.getPWMA());
@@ -126,10 +158,15 @@ void irwalllib() {
 
 
 void enclib() {
+  if (arrlen == -1) {
+    startedge = ledge;
+    arrlen = 0;
+  }
   if (arrlen < arrlimit) {
-    if (edge > 50) {
+    if (ledge - startedge > 50) {
       arr[arrlen] = lenc.getSpeed(micros());
       arrlen++;
+      startedge = ledge;
     }
   } else {
     float sum = 0;
@@ -146,14 +183,14 @@ void drivelib() {
   // Drive
   if (Serial.available() > 0) {
     char input = Serial.read();
-    if (input == 's') {
+    if (input == 'x') {
       umouse.stop();
     } else if (input == ' ') {
       umouse.brake();
     } else {
       if (input == 'w') {
         umouse.setPWM(umouse.getPWMA() + pwmIncr, umouse.getPWMB() + pwmIncr);
-        arrlen = 0;
+        arrlen = -1;
       } else if (input == 's') {
         umouse.setPWM(umouse.getPWMA() - pwmIncr, umouse.getPWMB() - pwmIncr);
       } else if (input == 'a') {
