@@ -110,15 +110,6 @@ void printMazeInfo(int x, int y) {
   Serial.println("");
 }
 
-void initializeSensors() {
-  IRsensor lsensor(left, lc1, lc2, irThSide);
-  IRsensor dlsensor(diagleft, dlc1, dlc2, irThDiag);
-  IRsensor flsensor(frontleft, flc1, flc2, irThFront);
-  IRsensor frsensor(frontright, frc1, frc2, irThFront);
-  IRsensor drsensor(diagright, drc1, drc2, irThDiag);
-  IRsensor rsensor(right, rc1, rc2, irThSide);
-}
-
 void initializeThings() {
   //If we shouldn't read from mem, mem should be cleared outside of this program
   //curRun = readMazeFromMem();
@@ -127,13 +118,6 @@ void initializeThings() {
   initializeFloodfill(returnState);
   //calc(0,0,returnState);
   initializeSensors();
-
-  Encoder lenc(dwheelmm);
-
-  Driver umouse(ain1, ain2, pwma, bin1, bin2, pwmb);
-  PID pid(kp, kd);
-
-  Gyroscope gyro;
 
   t2 = millis();
   Serial.print("Time is: ");
@@ -312,12 +296,11 @@ void loop() {
       }
     }
   }
-  curDir = x == nextRow? (y > nextCol ? SOUTH:NORTH) : 
-  (x > nextRow ? WEST:EAST);
+  curDir = moveFromTo(x,y, curDir, nextRow, nextCol);
+  
   x = nextRow; 
   y = nextCol;
 
-  moveTo(x,y, curDir);
   t2 = millis();
   Serial.print("Calculating next step time is: ");
   Serial.println(t2-t1);

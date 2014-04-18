@@ -71,7 +71,6 @@ void setup() {
 
 void loop()
 {
-
   //int cm = 90;
   //driveForward(cm * edgePerCm);
   //pidlib();
@@ -80,8 +79,7 @@ void loop()
   //drivelib();
   //umouse.setPWM(10, 10);
   if (!done) {
-    turn(-90);
-    //driveForward(10*edgePerCm);
+    driveForward(edgePerSq);
     done = true;
   }
 //  Serial.print(ledge);
@@ -153,7 +151,7 @@ void pidlib() {
 }
 
 void irdistlib() {
-    // IR
+  // IR
   Serial.print("Distance:\t");
   Serial.print(lsensor.getCm());
   Serial.print("\t");
@@ -169,7 +167,7 @@ void irdistlib() {
 }
 
 void irvallib() {
-    // IR
+  // IR
   Serial.print("Distance:\t");
   Serial.print(lsensor.getVal());
   Serial.print("\t");
@@ -185,7 +183,7 @@ void irvallib() {
 }
 
 void irwalllib() {
-    // IR
+  // IR
   Serial.print("Distance:\t");
   Serial.print(lsensor.hasWall());
   Serial.print("\t");
@@ -199,7 +197,6 @@ void irwalllib() {
   Serial.print("\t");
   Serial.println(rsensor.hasWall());
 }
-
 
 void enclib() {
   if (arrlen == -1) {
@@ -320,5 +317,6 @@ void turn(int ref) {
       previousDegreeError = errorDegree;
       prevZRate = zRate;
       previousTime = millis();
+     
   }
 }

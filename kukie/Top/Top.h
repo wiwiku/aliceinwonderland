@@ -49,7 +49,7 @@ const int dwheelmm = 32;
 const int leftwheel = 0; // D2 pin (interrupt 0)
 const int rightwheel = 1; // D3 pin (interrupt 1)
 
-const int edgePerCm = 3;
+const int edgePerSq = 50;
 
 // Drive (Digital)
 const int ain1 =  7;
