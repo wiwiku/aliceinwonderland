@@ -70,10 +70,12 @@ void Driver::stop() {
 
 // Brake is stronger than stop (which coasts).
 void Driver::brake() {
+    _pwma = 0;
+    _pwmb = 0;
     digitalWrite(_a1, HIGH);
     digitalWrite(_a2, HIGH);
-    analogWrite(_pwmapin, 0);
+    analogWrite(_pwmapin, _pwma);
     digitalWrite(_b1, HIGH);
     digitalWrite(_b2, HIGH);
-    analogWrite(_pwmbpin, 0);
+    analogWrite(_pwmbpin, _pwmb);
 }
