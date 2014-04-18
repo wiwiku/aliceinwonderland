@@ -1,5 +1,6 @@
-#include <QueueList.h>
 #include <EEPROM.h>
+
+#include <QueueList.h>
 #include "core.h"
 
 /* row is the x-value, col is the y-value */
@@ -11,7 +12,7 @@ int floodfillArr[LENGTH][LENGTH];
 QueueList <int> queue;
 
 /* Queue accessor methods for debugging purposes */
-boolean qEmpty() {
+bool qEmpty() {
   return queue.isEmpty();
 }
 int qPop() {
@@ -53,11 +54,10 @@ void setFFScore(int row, int col, int score) {
 }
 
 /* Check if a wall in the given direction exists */
-bool wallExists(int row, int col, int dir) {
-  if ((row <= 0 && (dir==WEST)) || (col <= 0 && (dir == SOUTH)) || (row >= LENGTH-1 && dir == EAST) || (col >= LENGTH -1 && dir == NORTH)) {
+boolean wallExists(int row, int col, int dir) {
+  if (((row <= 0) && (dir==WEST)) || ((col <= 0) && (dir == SOUTH)) || ((row >= LENGTH-1) && (dir == EAST)) || ((col >= LENGTH -1) && (dir == NORTH))) {
     return true;
-  } 
-  else if ((getWalls(row, col) & dir) == dir){
+  } else if ((getWalls(row, col) & dir) == dir){
     return true;
   }
   return false;
@@ -224,7 +224,7 @@ void updateFloodfill(int x, int y, int newWalls, boolean returnState) {
   if(newWallExists(newWalls, SOUTH) || getFFScore(x, y-1) == UNDEFINED) {
     pushIfValid(x, y-1);
   }
-  calculateFFValues(x, y, returnState);
+  //calculateFFValues(x, y, returnState);
 }
 
 /* Initial starting maze values */
@@ -243,6 +243,7 @@ void initializeFloodfill(boolean returnState) {
 
   //set the initial cell values
   updateFloodfill(7, 7, 12, returnState);
+  calculateFFValues(7,7,returnState);
 }
 
 /* Sets (0,0) to be the goal state and recalculates floodfill values */
@@ -273,4 +274,5 @@ void writeMazeToMem(int curRun) {
   }
   EEPROM.write(256, curRun);
 }
+
 

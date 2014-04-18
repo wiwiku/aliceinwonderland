@@ -1,4 +1,6 @@
-#include <IRsensor.h>
+
+#include <QueueList.h>
+//#include <IRsensor.h>
 #include <QueueList.h>
 #include <EEPROM.h>
 #include "sensors.h"
@@ -14,6 +16,8 @@ int newWalls = 0;
 int nextRow, nextCol, nextVal;
 int dir, row, col, val, curRun; 
 boolean hasWall, returnState;
+
+unsigned long t1, t2;
 
 void setup() {
   Serial.begin(9600);
@@ -61,7 +65,8 @@ void printMazeInfo(int x, int y) {
           }
           if (mazej == x && mazei == y) {
             Serial.print("XX");
-          } else {
+          } 
+          else {
             thisVal = getFFScore(mazej, mazei);
             if (thisVal < 10) {
               Serial.print(" ");
@@ -96,7 +101,9 @@ void printMazeInfo(int x, int y) {
   for (int i = 0; i < LENGTH; i++) {
     Serial.print(" ");
     Serial.print(i);
-    if (i < 10) {Serial.print(" ");}
+    if (i < 10) {
+      Serial.print(" ");
+    }
     Serial.print(" ");
   }
   Serial.println("");
@@ -104,10 +111,94 @@ void printMazeInfo(int x, int y) {
 
 void initializeThings() {
   //If we shouldn't read from mem, mem should be cleared outside of this program
-  curRun = readMazeFromMem();
+  //curRun = readMazeFromMem();
+  curRun = 0;
+  t1 = millis();
   initializeFloodfill(returnState);
+  //calc(0,0,returnState);
+  t2 = millis();
+  Serial.print("Time is: ");
+  Serial.println(t2-t1);
   if (DEBUG) { 
     printMazeInfo(0,0); 
+  }
+}
+
+void calc(int x, int y, boolean returnState) {
+  while(!qEmpty()) {
+    int i = qPop() & 255;//double-check
+    int row, col;
+    iToRowCol( row, col, i );
+    Serial.print("Checking: ");
+    Serial.print(row);
+    Serial.print(", ");
+    Serial.println(col);
+
+    // Get smallest neighbor
+    int small = -1; //getFFScore(row, col); //there should be some neighbor smaller than it
+    if (!returnState && (row == 7 || row == 8) && (col == 7 || col == 8)) {
+      small = getFFScore(row, col);
+      small--;
+    } 
+    else if (returnState && (row == 0) && (col == 0)) {
+      small = getFFScore(row, col);
+      small--;
+    }  
+    else {
+      if(!wallExists(row, col, EAST)) {
+        if (small == -1 || getFFScore(row+1, col) < small) {
+          small = getFFScore(row+1, col);
+        }
+      }
+
+      if(!wallExists(row, col, NORTH)) {
+        if (small == -1 || getFFScore(row, col+1) < small) {
+          small = getFFScore(row, col+1);
+        }
+      }
+
+      if(!wallExists(row, col, WEST)) {
+        if (small == -1 || getFFScore(row-1, col) < small) {
+          small = getFFScore(row-1, col);
+        }
+      }
+
+      if(!wallExists(row, col, SOUTH)) {
+        if (small == -1 || getFFScore(row, col-1) < small) {
+          small = getFFScore(row, col-1);
+        }
+      }
+    }
+
+    small++; //value that it should be
+    int curVal = getFFScore(row, col); //value that it is
+
+    if(curVal != UNDEFINED && curVal == small) { 
+      continue; 
+    }
+
+    // Floodfill this cell  
+    setFFScore(row, col, small);
+
+    // Check the cell to the north
+    if(!wallExists(row, col, NORTH)) {
+      qPush( rowColToI(row, col+1));
+    }
+
+    // Check the cel to the east
+    if(!wallExists(row, col, EAST)) {
+      qPush( rowColToI(row+1, col));
+    }
+
+    // Check the cell to the south
+    if(!wallExists(row, col, SOUTH)) {
+      qPush( rowColToI(row, col-1));
+    }
+
+    // Check the cell to the west
+    if(!wallExists(row, col, WEST)) {
+      qPush( rowColToI(row-1, col));
+    }
   }
 }
 
@@ -117,12 +208,24 @@ void loop() {
     returnState = !returnState;
     if (returnState) {
       Serial.println("Flip");
+      t1 = millis();
       flipFFScore(returnState);
-    } else { //this is where we've completed one run.
+      calc(0,0,returnState);
+      t2 = millis();
+      Serial.print("Flip time is: ");
+      Serial.println(t2-t1);
+    } 
+    else { //this is where we've completed one run.
       //Write maze to EPPROM
       curRun++;
+      Serial.println("WRITTING");
+      t1 = millis();
       writeMazeToMem(curRun);
       initializeFloodfill(returnState);
+      calc(7,7,returnState);
+      t2 = millis();
+      Serial.print("Restart time is: ");
+      Serial.println(t2-t1);
       Serial.println("Done");
     }
   }
@@ -130,13 +233,13 @@ void loop() {
   walls = getWalls(x,y); 
   newWalls = 0;
 
-//  //If only one possible move, move.
-//  if ((ALLWALLS - walls) == curDir || ((ALLWALLS - walls) << 2) == curDir) {
-//    Serial.println("Can only move straight");
-//    getAdjacentCell(x, y, curDir);
-//    moveTo(x, y, curDir);
-//    return;
-//  } 
+  //  //If only one possible move, move.
+  //  if ((ALLWALLS - walls) == curDir || ((ALLWALLS - walls) << 2) == curDir) {
+  //    Serial.println("Can only move straight");
+  //    getAdjacentCell(x, y, curDir);
+  //    moveTo(x, y, curDir);
+  //    return;
+  //  } 
 
   if (DEBUG) {
     Serial.println("In:");
@@ -147,23 +250,30 @@ void loop() {
       int incomingVal = atoi(incomingBytes);
       if (incomingVal > 0 && incomingVal <= 15)
         newWalls = incomingVal;
-      
+
     } 
-  } else if (!DEBUG) {
+  } 
+  else if (!DEBUG) {
     //sense what walls are surrounding the mouse
     newWalls = senseWalls();
   }
 
+  t1 = millis();
   //if they differ, from what we know, then we've found new walls
   if (newWalls > walls) {
     addNewWalls(x, y, newWalls);
     updateFloodfill(x, y, newWalls-walls, returnState);
+    calc(x,y,returnState);
   }
+  
+  t2 = millis();
+  Serial.print("Floodfill time is: ");
+  Serial.println(t2-t1);
 
   if (DEBUG) { 
     printMazeInfo(x,y); 
   }
-
+ t1 = millis();
   val = getFFScore(x,y);
   //TIP: For first steps, go straight until there is more than one option. Then start updating floodfill.
   //See what the options are
@@ -189,20 +299,9 @@ void loop() {
   y = nextCol;
 
   moveTo(x,y, curDir);
+  t2 = millis();
+  Serial.print("Calculating next step time is: ");
+  Serial.println(t2-t1);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
