@@ -3,90 +3,63 @@
 #include "Driver.h"
 #include "Encoder.h"
 #include "IRsensor.h"
+#include "PID.h"
 
 #include <avr/interrupt.h>
 #include <avr/io.h>
 
-// *** Constants ***
-// IR (Analog)
-const int left = A3;
-const int frontleft = A2;
-const int frontright = A1;
-const int right = A0;
-const int irThCm = 8;
+#include "Top.h"
 
-const float lc1 = 1123.1;
-const float lc2 = -1.201;
-const float flc1 = 1093.8;
-const float flc2 = -1.257;
-const float frc1 = 1010.0;
-const float frc2 = -1.168;
-const float rc1 = 897.89;
-const float rc2 = -1.178;
+IRsensor lsensor(left, lc1, lc2, irThCm);
+IRsensor dlsensor(diagleft, dlc1, dlc2, irThCm);
+IRsensor flsensor(frontleft, flc1, flc2, irThCm);
+IRsensor frsensor(frontright, frc1, frc2, irThCm);
+IRsensor drsensor(diagright, drc1, drc2, irThCm);
+IRsensor rsensor(right, rc1, rc2, irThCm);
 
-IRsensor lsense(left, lc1, lc2, irThCm);
-IRsensor flsense(frontleft, flc1, flc2, irThCm);
-IRsensor frsense(frontright, frc1, frc2, irThCm);
-IRsensor rsense(right, rc1, rc2, irThCm);
-
-// Speed (Analog)
-const int dwheelmm = 32;
-const int leftwheel = 0; // D2 pin (interrupt 0)
-const int rightwheel = 1; // D3 pin (interrupt 1)
-
-Encoder enc(dwheelmm);
-
-// Drive (Digital)
-const int ain1 =  13;
-const int ain2 =  12;
-const int pwma =  10;
-const int bin1 =  6;
-const int bin2 =  7;
-const int pwmb =  11;
-
-
+Encoder lenc(dwheelmm);
 
 Driver umouse(ain1, ain2, pwma, bin1, bin2, pwmb);
+PID pid(kp, kd);
 
-// PID
-const double kp = 0.3;
-const double kd = 0.1;
-double ep, prevep, ed;
-double rawpterm, rawdterm;
-int pidterm;
-
-// *** Variables ***
-volatile unsigned long edge = 0;
-int pwmIncr = 10;
 Gyroscope gyro;
+
+#define LOW_FILTER 3
+#define UPDATE_GYRO 10 //in milliseconds
+#define GYRO_CALIBRATION 2.61
+#define SAMPLE_RATE 10
+#define LEFT 20
+#define RIGHT 15
+#define SLOWMAX 30
+#define FASTMAX 100
+#define SLOWMIN 5
+#define FASTMIN 5
+
+#define MARGIN_ERROR 0
+#define ZERO_MARGIN 1
+
+float gyroK = .2; //2
+float gyroKd = .1; //1.4
+
+#define FAST_TURN 0
+#define SLOW_STEADY 1
+int gyroState = FAST_TURN;
+
+#define SLOW 0
+#define FAST 1
+int turnMode = FAST;
+int maxPWM = 0;
+int minPWM = 0;
+int gyroOffset = 0;
+int turnRatio = 0;
 
 int xOff, yOff, zOff = 0;
 long previousTime = 0;
 long degreesChanged = 0;
 int actualDegreesChanged = 0;
 volatile int accumulatedDegrees = 0;
-
 int prevZRate = 0;
 
-#define LOW_FILTER 3
-#define UPDATE_GYRO 10 //in milliseconds
-#define GYRO_CALIBRATION 2.61
-#define SAMPLE_RATE 10
-#define GYRO_OFFSET 7
-#define LEFT 20
-#define RIGHT 15
-#define TOPPWM 20
-#define MINPWM 4
-#define MARGIN_ERROR 30
-#define ZERO_MARGIN 3
-
-int MAXPWM = TOPPWM;
-#define gyroK 2 //2
-#define gyroKd 1.5 //1.4
-
-#define FAST_TURN 0
-#define SLOW_STEADY 1
-int gyroState = FAST_TURN;
 
 int errorDegree = 0;
 int previousDegreeError = 0;
@@ -94,9 +67,12 @@ int refDegree = 90;
 int pwmLeft = 0;
 int pwmRight = 0;
 
+
 int gyro_offset = 0;
 int zRate = 0;
 int LEDPIN = 13;
+int SWITCH = 10;
+
 
 boolean stopEverything = false;
 
@@ -105,12 +81,6 @@ boolean stopEverything = false;
 
 void setup() {
   Serial.begin(9600);  
-  Serial.println("Set Up");
-  
-  //gyro.readX();
-//  
-
-  Serial.println("End Set Up");
   
   //Configure the gyroscope
   //Set the gyroscope scale for the outputs to +/-2000 degrees per secon
@@ -125,10 +95,9 @@ void setup() {
     gyro_offset = RIGHT/LEFT;  
   }
   
-    pinMode(LEDPIN, OUTPUT);
- 
+    pinMode(SWITCH, INPUT);
+
     // initialize Timer1
-    /*
     cli();          // disable global interrupts
     TCCR1A = 0;     // set entire TCCR1A register to 0
     TCCR1B = 0;     // same for TCCR1B
@@ -143,27 +112,9 @@ void setup() {
     // enable timer compare interrupt:
     TIMSK1 |= (1 << OCIE1A);
     sei();          // enable global interrupts
-*/
-
-    cli();          // disable global interrupts
-
-  //set timer0 interrupt at 2kHz
-  TCCR0A = 0;// set entire TCCR0A register to 0
-  TCCR0B = 0;// same for TCCR0B
-  TCNT0  = 0;//initialize counter value to 0
-  // set compare match register for 2khz increments
-  OCR0A = 155;// = (16*10^6) / (2000*64) - 1 (must be <256)
-  // turn on CTC mode
-  TCCR0A |= (1 << WGM01);
-  // Set CS01 and CS00 bits for 64 prescaler
-  TCCR0B |= (1 << CS02) | (1 << CS00);   
-  // enable timer compare interrupt
-  TIMSK0 |= (1 << OCIE0A);
-  sei();
-  
 }
 
-ISR(TIMER0_COMPA_vect)
+ISR(TIMER1_COMPA_vect)
 {
   //digitalWrite(LEDPIN, !digitalRead(LEDPIN));
   if (abs(zRate) > LOW_FILTER) {
@@ -173,67 +124,81 @@ ISR(TIMER0_COMPA_vect)
 
 void loop() {
   if (!stopEverything) {
-    turn(90);
-    turn(90);
+    turn(-90);
+    //turn(90);
     stopEverything = true;
   }    
    //}
   //Wait 10ms before reading the values again. (Remember, the output rate was set to 100hz and 1reading per 10ms = 100hz.)
 }
 
-void turn(int referenceDegree) {
+void switchMode(int mode) {
+  turnMode = mode;  
+}
+
+
+void turn(int ref) {
+  if (turnMode == SLOW) {
+    gyroK = 0.2;
+    gyroKd = 0.1;
+    minPWM = SLOWMIN;
+    maxPWM = SLOWMAX;  
+    gyroOffset = 4;
+    turnRatio = 4;
+  } else if (turnMode == FAST) {
+    gyroK =  0.8;
+    gyroKd = 0.5;
+  
+    minPWM = FASTMIN;
+    maxPWM = FASTMAX;
+    gyroOffset = 16;
+    turnRatio = 8;
+    
+  }
+  
+  int referenceDegree = 0;
+  if (ref > 0) {
+    referenceDegree = ref - gyroOffset; 
+  } else {
+    referenceDegree = ref + gyroOffset;       
+  }
   boolean notComplete = true;
-  gyroState = FAST_TURN;
   degreesChanged = 0;
-  MAXPWM = TOPPWM;
   while(notComplete) {
       long difference = millis() - previousTime;      
       zRate = gyro.readZ() - zOff;
      
       actualDegreesChanged = degreesChanged/1000;
       errorDegree = referenceDegree - actualDegreesChanged; 
-      int diffDegree = errorDegree - previousDegreeError;
-     
-          
-     if (errorDegree > 0) {
-      pwmRight = errorDegree*gyroK + diffDegree*gyroKd;
-      if (pwmRight < MINPWM) {
-        pwmRight = MINPWM; 
-      } else if (pwmRight > MAXPWM) {
-        pwmRight = MAXPWM; 
-      }
-      
-      if (errorDegree < referenceDegree/2) {
-        pwmLeft = 0; 
-      } else {
-        pwmLeft = MINPWM;    
-      } 
-      
+      int dError = (errorDegree - previousDegreeError)/difference;
 
+     if (errorDegree > 0) {
+      pwmRight = errorDegree*gyroK + dError*gyroKd;
+      if (pwmRight < minPWM) {
+        pwmRight = minPWM; 
+      } else if (pwmRight > maxPWM) {
+        pwmRight = maxPWM; 
+      }      
+      pwmLeft = pwmRight/turnRatio;
     } else {
-      pwmLeft = (-1 * errorDegree * gyroK) + diffDegree*gyroKd; 
-      if (pwmLeft < MINPWM ) {
-        pwmLeft = MINPWM;
-      } else if (pwmLeft > MAXPWM) {
-        pwmLeft = MAXPWM;  
+      pwmLeft = (-1 * errorDegree * gyroK) + dError*gyroKd; 
+      if (pwmLeft < minPWM ) {
+        pwmLeft = minPWM;
+      } else if (pwmLeft > maxPWM) {
+        pwmLeft = maxPWM;  
       }
       
-      if (abs(errorDegree) < referenceDegree/2) {
-        pwmRight = 0; 
-      } else {
-        pwmRight = MINPWM;    
-      } 
-      
+       pwmRight = pwmLeft/turnRatio;
     
     }
-     
+       /*
        switch(gyroState) {
          case FAST_TURN: {
            if (abs(errorDegree) <= referenceDegree/2) {
-             umouse.shortbrake();
-             MAXPWM = 6;
+             umouse.brake();
+             maxPWM = 6;
              gyroState = SLOW_STEADY;
-           } else if (analogRead(7) > 1000) {
+           } else if (digitalRead(SWITCH) == HIGH) {
                 umouse.stop();
             }  else {
              umouse.setPWM(pwmLeft, pwmRight);  
@@ -244,9 +209,9 @@ void turn(int referenceDegree) {
      
          case SLOW_STEADY: {
           if (abs(errorDegree) <= ZERO_MARGIN) {
-             umouse.shortbrake();
+             umouse.brake();
              notComplete = false;
-           } else if (analogRead(7) > 1000) {
+           } else if (digitalRead(SWITCH) == HIGH) {
                 umouse.stop();
             }  else {
              umouse.setPWM(pwmLeft, pwmRight);  
@@ -255,20 +220,27 @@ void turn(int referenceDegree) {
          
           }
              
-       } 
+       } */
        
      
-
+        if (abs(errorDegree) <= ZERO_MARGIN) {
+             umouse.brake();
+             notComplete = false;
+           } else if (digitalRead(SWITCH) == HIGH) {
+                umouse.stop();
+            }  else {
+             umouse.setPWM(pwmLeft, pwmRight);  
+           }           
 
     
     
 //      //  Serial.println("PWM LEFT: " + String(pwmLeft) + "; PWM RIGHT: " + String(pwmRight));
 //     if (abs(errorDegree) <= ZERO_MARGIN || stopEverything) {
-//       umouse.shortbrake();
+//       umouse.brake();
 //       stopEverything = true;
 //     } else 
 //    //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms        
-     // Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";degreesChanged " + String(degreesChanged) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
+      //Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";degreesChanged " + String(degreesChanged) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
       previousDegreeError = errorDegree;
       prevZRate = zRate;
       previousTime = millis();
