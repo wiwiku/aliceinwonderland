@@ -16,17 +16,20 @@ Gyroscope gyro;
 
 #define GYROK_SLOW .2
 #define GYROKD_SLOW .1
-#define GYROK_FAST 
+#define GYROK_FAST .8
+#define GYROKD_FAST .5
+#define OFF_SLOW 4
+#define RATIO_SLOW 4
+#define OFF_FAST 16
+#define RATIO_FAST 8
 
 float gyroK = .2; //2
 float gyroKd = .1; //1.4
 
-#define FAST_TURN 0
-#define SLOW_STEADY 1
-int gyroState = FAST_TURN;
-
 #define SLOW 0
 #define FAST 1
+#define UTURN 2
+
 int turnMode = FAST;
 int maxPWM = 0;
 int minPWM = 0;
