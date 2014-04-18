@@ -30,6 +30,7 @@ void setup() {
 
 void loop()
 {
+
   int cm = 90;
   driveForward(cm * edgePerCm);
   //pidlib();
@@ -58,6 +59,7 @@ void driveForward(unsigned long deltaEdge) {
 }
 
 void pidlib() {
+
   int basespeed = 10;
   if (lsensor.hasWall() && rsensor.hasWall()) {
     double lcm = flsensor.getCm();
@@ -68,6 +70,7 @@ void pidlib() {
     Serial.print("\t");
     Serial.println(umouse.getPWMB());
   } else {
+
     umouse.setPWM(basespeed, basespeed);
     Serial.println("no wall");
   }
