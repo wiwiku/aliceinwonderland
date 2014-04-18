@@ -1,6 +1,7 @@
 
 #include <QueueList.h>
-//#include <IRsensor.h>
+#include "Top.h"
+#include <IRsensor.h>
 #include <QueueList.h>
 #include <EEPROM.h>
 #include "sensors.h"
@@ -116,6 +117,8 @@ void initializeThings() {
   t1 = millis();
   initializeFloodfill(returnState);
   //calc(0,0,returnState);
+  initializeSensors();
+
   t2 = millis();
   Serial.print("Time is: ");
   Serial.println(t2-t1);
@@ -255,7 +258,7 @@ void loop() {
   } 
   else if (!DEBUG) {
     //sense what walls are surrounding the mouse
-    newWalls = senseWalls();
+    newWalls = senseWalls(curDir);
   }
 
   t1 = millis();
@@ -265,7 +268,7 @@ void loop() {
     updateFloodfill(x, y, newWalls-walls, returnState);
     calc(x,y,returnState);
   }
-  
+
   t2 = millis();
   Serial.print("Floodfill time is: ");
   Serial.println(t2-t1);
@@ -273,7 +276,7 @@ void loop() {
   if (DEBUG) { 
     printMazeInfo(x,y); 
   }
- t1 = millis();
+  t1 = millis();
   val = getFFScore(x,y);
   //TIP: For first steps, go straight until there is more than one option. Then start updating floodfill.
   //See what the options are
@@ -293,15 +296,16 @@ void loop() {
       }
     }
   }
-  curDir = x == nextRow? (y > nextCol ? SOUTH:NORTH) : 
-  (x > nextRow ? WEST:EAST);
+  curDir = moveFromTo(x,y, curDir, nextRow, nextCol);
+  
   x = nextRow; 
   y = nextCol;
 
-  moveTo(x,y, curDir);
   t2 = millis();
   Serial.print("Calculating next step time is: ");
   Serial.println(t2-t1);
 }
+
+
 
 

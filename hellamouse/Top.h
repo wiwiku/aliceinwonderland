@@ -28,7 +28,7 @@ const int frontright = A2;
 const int diagright = A1;
 const int right = A0;
 int irThSide = 15;
-int irThDiag = 15;
+int irThDiag = 10;
 int irThFront = 15;
 
 const float lc1 = 1024;
@@ -49,8 +49,6 @@ const int dwheelmm = 32;
 const int leftwheel = 0; // D2 pin (interrupt 0)
 const int rightwheel = 1; // D3 pin (interrupt 1)
 
-const int edgePerSq = 50;
-
 // Drive (Digital)
 const int ain1 =  7;
 const int ain2 =  4;
@@ -66,8 +64,7 @@ const float kp = 0.3;
 const float kd = 0.1;
 
 // *** Variables ***
-volatile unsigned long ledge = 0;
-volatile unsigned long redge = 0;
+volatile unsigned long edge = 0;
 
 
 #endif

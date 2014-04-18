@@ -4,24 +4,27 @@ Gyroscope gyro;
 #define UPDATE_GYRO 10 //in milliseconds
 #define GYRO_CALIBRATION 2.61
 #define SAMPLE_RATE 10
-#define LEFT 20
-#define RIGHT 15
-#define SLOWMAX 30
-#define FASTMAX 100
-#define SLOWMIN 5
-#define FASTMIN 5
 
-#define MARGIN_ERROR 0
 #define ZERO_MARGIN 1
 
+#define MIN_SLOW 5
+#define MAX_SLOW 30
 #define GYROK_SLOW .2
 #define GYROKD_SLOW .1
-#define GYROK_FAST .8
-#define GYROKD_FAST .5
 #define OFF_SLOW 4
 #define RATIO_SLOW 4
+
+#define MIN_FAST 5
+#define MAX_FAST 100
+#define GYROK_FAST .8
+#define GYROKD_FAST .5
 #define OFF_FAST 16
 #define RATIO_FAST 8
+
+#define MAX_UTURN 10
+#define OFF_UTURN 15
+#define RATIO_UTURN -1
+
 
 float gyroK = .2; //2
 float gyroKd = .1; //1.4
@@ -50,8 +53,6 @@ int refDegree = 90;
 int pwmLeft = 0;
 int pwmRight = 0;
 
-
-int gyro_offset = 0;
 int zRate = 0;
 int LEDPIN = 13;
 int SWITCH = 10;
