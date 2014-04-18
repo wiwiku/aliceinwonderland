@@ -1,6 +1,7 @@
 
 #include <QueueList.h>
-//#include <IRsensor.h>
+#include "Top.h"
+#include <IRsensor.h>
 #include <QueueList.h>
 #include <EEPROM.h>
 #include "sensors.h"
@@ -109,6 +110,15 @@ void printMazeInfo(int x, int y) {
   Serial.println("");
 }
 
+void initializeSensors() {
+  IRsensor lsensor(left, lc1, lc2, irThSide);
+  IRsensor dlsensor(diagleft, dlc1, dlc2, irThDiag);
+  IRsensor flsensor(frontleft, flc1, flc2, irThFront);
+  IRsensor frsensor(frontright, frc1, frc2, irThFront);
+  IRsensor drsensor(diagright, drc1, drc2, irThDiag);
+  IRsensor rsensor(right, rc1, rc2, irThSide);
+}
+
 void initializeThings() {
   //If we shouldn't read from mem, mem should be cleared outside of this program
   //curRun = readMazeFromMem();
@@ -116,6 +126,15 @@ void initializeThings() {
   t1 = millis();
   initializeFloodfill(returnState);
   //calc(0,0,returnState);
+  initializeSensors();
+
+  Encoder lenc(dwheelmm);
+
+  Driver umouse(ain1, ain2, pwma, bin1, bin2, pwmb);
+  PID pid(kp, kd);
+
+  Gyroscope gyro;
+
   t2 = millis();
   Serial.print("Time is: ");
   Serial.println(t2-t1);
@@ -255,7 +274,7 @@ void loop() {
   } 
   else if (!DEBUG) {
     //sense what walls are surrounding the mouse
-    newWalls = senseWalls();
+    newWalls = senseWalls(curDir);
   }
 
   t1 = millis();
@@ -265,7 +284,7 @@ void loop() {
     updateFloodfill(x, y, newWalls-walls, returnState);
     calc(x,y,returnState);
   }
-  
+
   t2 = millis();
   Serial.print("Floodfill time is: ");
   Serial.println(t2-t1);
@@ -273,7 +292,7 @@ void loop() {
   if (DEBUG) { 
     printMazeInfo(x,y); 
   }
- t1 = millis();
+  t1 = millis();
   val = getFFScore(x,y);
   //TIP: For first steps, go straight until there is more than one option. Then start updating floodfill.
   //See what the options are
@@ -303,5 +322,7 @@ void loop() {
   Serial.print("Calculating next step time is: ");
   Serial.println(t2-t1);
 }
+
+
 
 
