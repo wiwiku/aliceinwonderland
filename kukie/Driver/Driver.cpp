@@ -1,6 +1,12 @@
 //
 //  Driver.cpp
-//  
+//
+//  Implements control for the motor driver.
+//      HH = short brake
+//      HL = forward
+//      LH = backward
+//      LL = stop
+//  pwm takes a percentage (range: -100 ~ 100... negative means backward)
 //
 //  Created by William Ku on 4/15/14.
 //
@@ -27,16 +33,16 @@ void Driver::setPWM(int a, int b) {
     _pwmb = min(max(b, -100), 100);
 
     if (_pwma > 0) {
-        a1state = LOW; a2state = HIGH;
-    } else if (_pwma < 0) {
         a1state = HIGH; a2state = LOW;
+    } else if (_pwma < 0) {
+        a1state = LOW; a2state = HIGH;
     } else {
         a1state = LOW; a2state = LOW;
     }
     if (_pwmb > 0) {
-        b1state = LOW; b2state = HIGH;
-    } else if (_pwmb < 0) {
         b1state = HIGH; b2state = LOW;
+    } else if (_pwmb < 0) {
+        b1state = LOW; b2state = HIGH;
     } else {
         b1state = LOW; b2state = LOW;
     }
@@ -57,10 +63,12 @@ int Driver::getPWMB() {
     return _pwmb;
 }
 
+// Stops the car, but car may coast.
 void Driver::stop() {
     setPWM(0, 0);
 }
 
+// Brake is stronger than stop (which coasts).
 void Driver::brake() {
     digitalWrite(_a1, HIGH);
     digitalWrite(_a2, HIGH);

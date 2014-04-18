@@ -1,6 +1,7 @@
 //
 //  IRsensor.cpp
-//  
+//
+//  Implements IR sensor access class. Uses experiment-determined constants stored in Top.h.
 //
 //  Created by William Ku on 4/14/14.
 //
