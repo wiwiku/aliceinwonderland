@@ -1,6 +1,7 @@
 //
 //  PID.cpp
-//  
+//
+// Implements PID control (actually only PD) for centering the mouse by actuating the motors.
 //
 //  Created by William Ku on 4/17/14.
 //

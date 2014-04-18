@@ -1,6 +1,10 @@
 //
 //  Top.h
-//  
+//
+//  This class has all the constants such as:
+//  (1) Pin mapping
+//  (2) Experiment-determined constants
+//  (3) volatile variables that are used globally
 //
 //  Created by William Ku on 4/17/14.
 //
