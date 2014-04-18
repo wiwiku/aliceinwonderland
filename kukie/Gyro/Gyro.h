@@ -7,14 +7,14 @@ Gyroscope gyro;
 
 #define ZERO_MARGIN 1
 
-#define MIN_SLOW 5
+#define MIN_SLOW 10
 #define MAX_SLOW 30
-#define GYROK_SLOW .2
+#define GYROK_SLOW .3
 #define GYROKD_SLOW .1
-#define OFF_SLOW 4
+#define OFF_SLOW 15
 #define RATIO_SLOW 4
 
-#define MIN_FAST 5
+#define MIN_FAST 8
 #define MAX_FAST 100
 #define GYROK_FAST .8
 #define GYROKD_FAST .5

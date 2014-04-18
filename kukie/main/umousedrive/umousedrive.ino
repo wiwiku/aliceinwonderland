@@ -73,12 +73,37 @@ void loop()
   //drivelib();
   //umouse.setPWM(10, 10);
   if (!done) {
-    switchTurnMode(UTURN);
-    turn(-180);
-    //driveForward(10*edgePerCm);
+    switchTurnMode(SLOW);
     driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
     done = true;
   }
+     driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    //driveForward(10*edgePerCm);
+//    done = true;
+//  }
 //  Serial.print(ledge);
 //  Serial.print("\t");
 //  Serial.println(redge);
