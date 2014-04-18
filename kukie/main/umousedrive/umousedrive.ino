@@ -4,18 +4,22 @@
 #include "PID.h"
 #include "Top.h"
 
-IRsensor lsensor(left, lc1, lc2, irThCm);
-IRsensor dlsensor(diagleft, dlc1, dlc2, irThCm);
-IRsensor flsensor(frontleft, flc1, flc2, irThCm);
-IRsensor frsensor(frontright, frc1, frc2, irThCm);
-IRsensor drsensor(diagright, drc1, drc2, irThCm);
-IRsensor rsensor(right, rc1, rc2, irThCm);
+IRsensor lsensor(left, lc1, lc2, irThSide);
+IRsensor dlsensor(diagleft, dlc1, dlc2, irThDiag);
+IRsensor flsensor(frontleft, flc1, flc2, irThFront);
+IRsensor frsensor(frontright, frc1, frc2, irThFront);
+IRsensor drsensor(diagright, drc1, drc2, irThDiag);
+IRsensor rsensor(right, rc1, rc2, irThSide);
 
 Encoder lenc(dwheelmm);
 
 Driver umouse(ain1, ain2, pwma, bin1, bin2, pwmb);
 
 PID pid(kp, kd);
+
+float arr[30];
+int arrlen = 0;
+int arrlimit = 10;
 
 int pwmIncr = 10;
 
@@ -26,13 +30,11 @@ void setup() {
 
 void loop()
 {
-  /*
-  Serial.println(enc.getSpeed(micros()));
-  int sp = (analogRead(7) > 1000) ? 10 : 0;
-  umouse.setPWM(sp, sp);
- */
-  pidlib();
-  //irdistlib();
+
+  int cm = 90;
+  driveForward(cm * edgePerCm);
+  //pidlib();
+  //irwalllib();
   //enclib();
   //drivelib();
 }
@@ -41,17 +43,35 @@ void increment() {
   edge++;
 }
 
+// This function will drive the mouse forward for a specified number of edges.
+void driveForward(unsigned long deltaEdge) {
+  unsigned long stopEdge = edge + deltaEdge;
+  while (edge < stopEdge) {
+    if (lsensor.hasWall() && rsensor.hasWall()) { // do pid
+      double lcm = flsensor.getCm();
+      double rcm = frsensor.getCm();
+      int pidout = floor(pid.getPIDterm(lcm, rcm));
+      umouse.setPWM(forwardSpeed - pidout, forwardSpeed + pidout);
+    } else {
+      umouse.setPWM(forwardSpeed, forwardSpeed);
+    }
+  }
+}
+
 void pidlib() {
-  if (flsensor.getCm() < 15 && frsensor.getCm() < 15) {
+
+  int basespeed = 10;
+  if (lsensor.hasWall() && rsensor.hasWall()) {
     double lcm = flsensor.getCm();
     double rcm = frsensor.getCm();
     int pidout = floor(pid.getPIDterm(lcm, rcm));
-    umouse.setPWM(10 + pidout, 10 - pidout);
+    umouse.setPWM(basespeed - pidout, basespeed + pidout);
     Serial.print(umouse.getPWMA());
     Serial.print("\t");
     Serial.println(umouse.getPWMB());
   } else {
-    umouse.setPWM(10, 10);
+
+    umouse.setPWM(basespeed, basespeed);
     Serial.println("no wall");
   }
 }
@@ -72,7 +92,7 @@ void irdistlib() {
   Serial.println(rsensor.getCm());
 }
 
-void irdistvallib() {
+void irvallib() {
     // IR
   Serial.print("Distance:\t");
   Serial.print(lsensor.getVal());
@@ -88,19 +108,52 @@ void irdistvallib() {
   Serial.println(rsensor.getVal());
 }
 
+void irwalllib() {
+    // IR
+  Serial.print("Distance:\t");
+  Serial.print(lsensor.hasWall());
+  Serial.print("\t");
+  Serial.print(dlsensor.hasWall());
+  Serial.print("\t");
+  Serial.print(flsensor.hasWall()); 
+  Serial.print("\t");
+  Serial.print(frsensor.hasWall()); 
+  Serial.print("\t");
+  Serial.print(drsensor.hasWall()); 
+  Serial.print("\t");
+  Serial.println(rsensor.hasWall());
+}
+
+
 void enclib() {
-  Serial.println(lenc.getSpeed(micros()));
+  if (arrlen < arrlimit) {
+    if (edge > 50) {
+      arr[arrlen] = lenc.getSpeed(micros());
+      arrlen++;
+    }
+  } else {
+    float sum = 0;
+    for (int i = 2; i < arrlimit; i++) {
+      sum += arr[i];
+    }
+    Serial.println(sum / (arrlimit - 2));
+  } 
+  //Serial.println(edge);
+  //Serial.println(lenc.getSpeed(micros()));
 }
 
 void drivelib() {
   // Drive
   if (Serial.available() > 0) {
     char input = Serial.read();
-    if (input == ' ') {
+    if (input == 's') {
       umouse.stop();
+    } else if (input == ' ') {
+      umouse.brake();
     } else {
       if (input == 'w') {
         umouse.setPWM(umouse.getPWMA() + pwmIncr, umouse.getPWMB() + pwmIncr);
+        arrlen = 0;
       } else if (input == 's') {
         umouse.setPWM(umouse.getPWMA() - pwmIncr, umouse.getPWMB() - pwmIncr);
       } else if (input == 'a') {
