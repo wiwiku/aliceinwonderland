@@ -75,13 +75,12 @@ int prevZRate = 0;
 #define GYRO_OFFSET 7
 #define LEFT 20
 #define RIGHT 15
-#define TOPPWM 15;
-#define MINPWM 5
+#define TOPPWM 20
+#define MINPWM 4
 #define MARGIN_ERROR 30
 #define ZERO_MARGIN 3
 
 int MAXPWM = TOPPWM;
-
 #define gyroK 2 //2
 #define gyroKd 1.5 //1.4
 
@@ -126,8 +125,27 @@ void setup() {
     gyro_offset = RIGHT/LEFT;  
   }
   
-  
-  cli();          // disable global interrupts
+    pinMode(LEDPIN, OUTPUT);
+ 
+    // initialize Timer1
+    /*
+    cli();          // disable global interrupts
+    TCCR1A = 0;     // set entire TCCR1A register to 0
+    TCCR1B = 0;     // same for TCCR1B
+ 
+    // set compare match register to desired timer count:
+    OCR1A = 157;
+    // turn on CTC mode:
+    TCCR1B |= (1 << WGM12);
+    // Set CS10 and CS12 bits for 1024 prescaler:
+    TCCR1B |= (1 << CS10);
+    TCCR1B |= (1 << CS12);
+    // enable timer compare interrupt:
+    TIMSK1 |= (1 << OCIE1A);
+    sei();          // enable global interrupts
+*/
+
+    cli();          // disable global interrupts
 
   //set timer0 interrupt at 2kHz
   TCCR0A = 0;// set entire TCCR0A register to 0
@@ -142,6 +160,7 @@ void setup() {
   // enable timer compare interrupt
   TIMSK0 |= (1 << OCIE0A);
   sei();
+  
 }
 
 ISR(TIMER0_COMPA_vect)
@@ -184,7 +203,7 @@ void turn(int referenceDegree) {
         pwmRight = MAXPWM; 
       }
       
-      if (errorDegree < MARGIN_ERROR) {
+      if (errorDegree < referenceDegree/2) {
         pwmLeft = 0; 
       } else {
         pwmLeft = MINPWM;    
@@ -199,7 +218,7 @@ void turn(int referenceDegree) {
         pwmLeft = MAXPWM;  
       }
       
-      if (abs(errorDegree) < MARGIN_ERROR) {
+      if (abs(errorDegree) < referenceDegree/2) {
         pwmRight = 0; 
       } else {
         pwmRight = MINPWM;    
@@ -210,7 +229,7 @@ void turn(int referenceDegree) {
      
        switch(gyroState) {
          case FAST_TURN: {
-           if (abs(errorDegree) <= refDegree/2) {
+           if (abs(errorDegree) <= referenceDegree/2) {
              umouse.shortbrake();
              MAXPWM = 6;
              gyroState = SLOW_STEADY;
