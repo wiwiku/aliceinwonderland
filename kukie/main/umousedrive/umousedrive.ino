@@ -253,20 +253,20 @@ void switchMode(int mode) {
 
 void turn(int ref) {
   if (turnMode == SLOW) {
-    gyroK = 0.2;
-    gyroKd = 0.1;
+    gyroK = GYROK_SLOW;
+    gyroKd = GYROKD_SLOW;
     minPWM = SLOWMIN;
     maxPWM = SLOWMAX;  
-    gyroOffset = 4;
-    turnRatio = 4;
+    gyroOffset = OFF_SLOW;
+    turnRatio = RATIO_SLOW;
   } else if (turnMode == FAST) {
-    gyroK =  0.8;
-    gyroKd = 0.5;
+    gyroK =  GYROK_FAST;
+    gyroKd = GYROKD_FAST;
   
     minPWM = FASTMIN;
     maxPWM = FASTMAX;
-    gyroOffset = 16;
-    turnRatio = 8;
+    gyroOffset = OFF_FAST; //16
+    turnRatio = RATIO_FAST; //8
     
   }
   
@@ -322,5 +322,4 @@ void turn(int ref) {
       previousTime = millis();
      
   }
-  
 }
