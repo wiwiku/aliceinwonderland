@@ -26,7 +26,7 @@ int arrlimit = 10;
 unsigned long startedge = 0;
 
 boolean done = false;
-volatile boolean goingforward = false;
+volatile boolean moving = false;
 
 volatile unsigned long stopEdge = 0;
 
@@ -43,8 +43,14 @@ void setup() {
   gyro.configureSampleRate(9);
 
   zOff = gyro.readZ();
-  umouse.setPWM(pwmLeft, pwmRight);  
-  pinMode(SWITCH, INPUT);
+  umouse.setPWM(pwmLeft, pwmRight);
+  if (LEFT > RIGHT) {
+    gyro_offset = LEFT/RIGHT;  
+  } else {
+    gyro_offset = RIGHT/LEFT;  
+  }
+  
+    pinMode(SWITCH, INPUT);
     
   // initialize Timer1
   cli();          // disable global interrupts
@@ -73,37 +79,9 @@ void loop()
   //drivelib();
   //umouse.setPWM(10, 10);
   if (!done) {
-    switchTurnMode(SLOW);
-    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    turn(-90);
-    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    turn(-90);
-    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    turn(-90);
-    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    turn(-90);
+    driveBackward(edgePerSq, backwardSpeed);
     done = true;
   }
-     driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    turn(-90);
-    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    turn(-90);
-    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    turn(-90);
-    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    turn(-90);
-    //driveForward(10*edgePerCm);
-//    done = true;
-//  }
 //  Serial.print(ledge);
 //  Serial.print("\t");
 //  Serial.println(redge);
@@ -111,10 +89,10 @@ void loop()
 
 void lincrement() {
   ledge++;
-  if (goingforward) {
+  if (moving) {
     if (ledge >= stopEdge) {
       umouse.brake();
-      goingforward = false;
+      moving = false;
     }
   }
 }
@@ -133,18 +111,54 @@ ISR(TIMER1_COMPA_vect)
 }
 
 // This function will drive the mouse forward for a specified number of edges.
-void driveForward(unsigned long deltaEdge) {
+void driveForward(unsigned long deltaEdge, int fspeed) {
   stopEdge = ledge + deltaEdge;
-  goingforward = true;
-  while (goingforward) {
+  moving = true;
+  while (moving) {
     if (lsensor.hasWall() && rsensor.hasWall()) { // do pid
       double lcm = dlsensor.getCm();
       double rcm = drsensor.getCm();
       int pidout = floor(pid.getPIDterm(lcm, rcm));
-      umouse.setPWM(forwardSpeed - pidout, forwardSpeed + pidout);
+      umouse.setPWM(fspeed - pidout, fspeed + pidout);
     } else {
-      umouse.setPWM(forwardSpeed, forwardSpeed);
+      umouse.setPWM(fspeed, fspeed);
     }
+  }
+  umouse.brake();
+  Serial.print(deltaEdge);
+  Serial.print("\t");
+  Serial.print(ledge);
+  Serial.print("\t");
+  Serial.println(stopEdge);
+}
+
+// This function will drive the mouse backward for a specified number of edges.
+void driveBackward(unsigned long deltaEdge, int bSpeed) {
+  int timeout = 30;
+  unsigned long prevedge = ledge;
+  stopEdge = ledge + deltaEdge;
+  moving = true;
+  while (moving && timeout > 0) {
+    Serial.println(timeout);
+    Serial.print("edge   ");
+    Serial.println(ledge);
+    if (ledge == prevedge) {
+      timeout--;
+      
+    } else {
+      timeout = 30;
+    }
+    if (lsensor.hasWall() && rsensor.hasWall()) { // do pid
+      double lcm = dlsensor.getCm();
+      double rcm = drsensor.getCm();
+      int pidout = floor(pid.getPIDterm(lcm, rcm));
+      umouse.setPWM(bSpeed - pidout, bSpeed + pidout);
+    } else {
+      umouse.setPWM(bSpeed, bSpeed);
+    }
+  }
+  if (timeout <= 0) {
+    Serial.println("timeout");
   }
   umouse.brake();
   Serial.print(deltaEdge);
@@ -265,35 +279,28 @@ void drivelib() {
   }
 }
 
-void switchTurnMode(int mode) {
+void switchMode(int mode) {
   turnMode = mode;  
 }
 
 
 void turn(int ref) {
-  if (turnMode == SLOW || turnMode == UTURN) {
+  if (turnMode == SLOW) {
     gyroK = GYROK_SLOW;
     gyroKd = GYROKD_SLOW;
-    minPWM = MIN_SLOW;
-    if (turnMode == UTURN) { 
-     turnRatio = RATIO_UTURN;
-     gyroOffset = OFF_UTURN;
-     maxPWM = MAX_UTURN;  
-
-    } else {
-      turnRatio = RATIO_SLOW;     
-      gyroOffset = OFF_SLOW;
-      maxPWM = MAX_SLOW;  
-
-    }
+    minPWM = SLOWMIN;
+    maxPWM = SLOWMAX;  
+    gyroOffset = OFF_SLOW;
+    turnRatio = RATIO_SLOW;
   } else if (turnMode == FAST) {
     gyroK =  GYROK_FAST;
     gyroKd = GYROKD_FAST;
   
-    minPWM = MIN_FAST;
-    maxPWM = MAX_FAST;
+    minPWM = FASTMIN;
+    maxPWM = FASTMAX;
     gyroOffset = OFF_FAST; //16
     turnRatio = RATIO_FAST; //8
+    
   }
   
   int referenceDegree = 0;
@@ -318,10 +325,8 @@ void turn(int ref) {
         pwmRight = minPWM; 
       } else if (pwmRight > maxPWM) {
         pwmRight = maxPWM; 
-      }    
-
-        pwmLeft = pwmRight/turnRatio;
-     
+      }      
+      pwmLeft = pwmRight/turnRatio;
     } else {
       pwmLeft = (-1 * errorDegree * gyroK) + dError*gyroKd; 
       if (pwmLeft < minPWM ) {
@@ -329,7 +334,7 @@ void turn(int ref) {
       } else if (pwmLeft > maxPWM) {
         pwmLeft = maxPWM;  
       }
-            
+      
        pwmRight = pwmLeft/turnRatio;
     
     }
