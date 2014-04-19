@@ -7,6 +7,8 @@
 #include <Wire.h>
 #include "Top.h"
 
+/* */
+
 IRsensor lsensor(left, lc1, lc2, irThSide);
 IRsensor dlsensor(diagleft, dlc1, dlc2, irThDiag);
 IRsensor flsensor(frontleft, flc1, flc2, irThFront);
@@ -26,7 +28,10 @@ int arrlimit = 10;
 unsigned long startedge = 0;
 
 boolean done = false;
-volatile boolean goingforward = false;
+volatile boolean moving = false;
+volatile boolean turnLeft = false;
+volatile boolean turnRight = false;
+volatile boolean notComplete = false;
 
 volatile unsigned long stopEdge = 0;
 
@@ -43,8 +48,10 @@ void setup() {
   gyro.configureSampleRate(9);
 
   zOff = gyro.readZ();
-  umouse.setPWM(pwmLeft, pwmRight);  
-  pinMode(SWITCH, INPUT);
+  umouse.setPWM(pwmLeft, pwmRight);
+
+  
+    pinMode(SWITCH, INPUT);
     
   // initialize Timer1
   cli();          // disable global interrupts
@@ -87,35 +94,44 @@ void loop()
   //drivelib();
   //umouse.setPWM(10, 10);
   if (!done) {
-    switchTurnMode(SLOW);
+    switchMode(SLOW);
 //    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    driveForward(edgePerSq);
+//    driveForward(edgePerSq, forwardSpeed);
+//    driveForward(edgePerSq, forwardSpeed);
     turn(-90);
-    driveForward(edgePerSq);
-//    driveForward(edgePerSq);
+    delay(1000);
     turn(-90);
-    driveForward(edgePerSq);
-//    driveForward(edgePerSq);
+    delay(1000);
     turn(-90);
-//    driveForward(edgePerSq);
+    delay(1000);
+
+    turn(-90);
+
+//    driveForward(edgePerSq, forwardSpeed);
+////    driveForward(edgePerSq);
 //    turn(-90);
+//    driveForward(edgePerSq, forwardSpeed);
+////    driveForward(edgePerSq);
+//    turn(-90);
+////    driveForward(edgePerSq);
+////    turn(-90);
     done = true;
   }
-     driveForward(edgePerSq);
-//    driveForward(edgePerSq);
-    turn(-90);
-//    driveForward(edgePerSq);
-//    driveForward(edgePerSq);
-//    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    turn(-90);
-//    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    turn(-90);
+//     driveForward(edgePerSq, forwardSpeed);
+////    driveForward(edgePerSq);
+//    turn(-90);
+////    driveForward(edgePerSq);
+////    driveForward(edgePerSq);
+////    driveForward(edgePerSq);
+//    driveForward(edgePerSq, forwardSpeed);
+//    turn(-90);
+////    driveForward(edgePerSq);
+//    driveForward(edgePerSq, forwardSpeed);
+//    turn(-90);
     //driveForward(10*edgePerCm);
 //    done = true;
 //  }
+
 //  Serial.print(ledge);
 //  Serial.print("\t");
 //  Serial.println(redge);
@@ -123,16 +139,27 @@ void loop()
 
 void lincrement() {
   ledge++;
-  if (goingforward) {
+  if (moving || turnRight) {
     if (ledge >= stopEdge) {
       umouse.brake();
-      goingforward = false;
+      moving = false;
+      turnRight = false;
+      notComplete = false;
+
     }
-  }
+  } 
 }
 
 void rincrement() {
   redge++;
+  if (moving || turnLeft) {
+    if (redge >= stopEdge) {
+      umouse.brake();
+      moving = false;
+      turnLeft = false;
+      notComplete = false;
+    }
+  }
 }
 
 //Update gyro's angle rate. 
@@ -145,18 +172,61 @@ ISR(TIMER1_COMPA_vect)
 }
 
 // This function will drive the mouse forward for a specified number of edges.
-void driveForward(unsigned long deltaEdge) {
+void driveForward(unsigned long deltaEdge, int fspeed) {
   stopEdge = ledge + deltaEdge;
-  goingforward = true;
-  while (goingforward) {
+  moving = true;
+  while (moving) {
+    if (flsensor.hasWall() && frsensor.hasWall()) {
+      double lcm = flsensor.getCm();
+      double rcm = frsensor.getCm();
+      double diff = lcm - rcm;
+      int pidout = floor(diff*kpForward);
+      umouse.setPWM(fspeed - pidout, fspeed + pidout);
+    } else if (dlsensor.hasWall() && drsensor.hasWall()) { // do pid
+      double lcm = dlsensor.getCm();
+      double rcm = drsensor.getCm();
+      int pidout = floor(pid.getPIDterm(lcm, rcm));
+      umouse.setPWM(fspeed - pidout, fspeed + pidout);
+    } 
+      else {
+      umouse.setPWM(fspeed, fspeed);
+    //}
+  }
+  umouse.brake();
+  Serial.print(deltaEdge);
+  Serial.print("\t");
+  Serial.print(ledge);
+  Serial.print("\t");
+  Serial.println(stopEdge);
+}
+
+// This function will drive the mouse backward for a specified number of edges.
+void driveBackward(unsigned long deltaEdge, int bSpeed) {
+  int timeout = 30;
+  unsigned long prevedge = ledge;
+  stopEdge = ledge + deltaEdge;
+  moving = true;
+  while (moving && timeout > 0) {
+    Serial.println(timeout);
+    Serial.print("edge   ");
+    Serial.println(ledge);
+    if (ledge == prevedge) {
+      timeout--;
+      
+    } else {
+      timeout = 30;
+    }
     if (lsensor.hasWall() && rsensor.hasWall()) { // do pid
       double lcm = dlsensor.getCm();
       double rcm = drsensor.getCm();
       int pidout = floor(pid.getPIDterm(lcm, rcm));
-      umouse.setPWM(forwardSpeed - pidout, forwardSpeed + pidout);
+      umouse.setPWM(bSpeed - pidout, bSpeed + pidout);
     } else {
-      umouse.setPWM(forwardSpeed, forwardSpeed);
+      umouse.setPWM(bSpeed, bSpeed);
     }
+  }
+  if (timeout <= 0) {
+    Serial.println("timeout");
   }
   umouse.brake();
   Serial.print(deltaEdge);
@@ -277,29 +347,30 @@ void drivelib() {
   }
 }
 
-void switchTurnMode(int mode) {
+void switchMode(int mode) {
   turnMode = mode;  
 }
 
 
 void turn(int ref) {
+/*
   
   driveForward(11);
 
   if (turnMode == SLOW || turnMode == UTURN) {
+*/
+  if (turnMode == SLOW || turnMode == UTURN) {
     gyroK = GYROK_SLOW;
     gyroKd = GYROKD_SLOW;
     minPWM = MIN_SLOW;
-    if (turnMode == UTURN) { 
-     turnRatio = RATIO_UTURN;
-     gyroOffset = OFF_UTURN;
-     maxPWM = MAX_UTURN;  
-
-    } else {
-      turnRatio = RATIO_SLOW;     
-      gyroOffset = OFF_SLOW;
-      maxPWM = MAX_SLOW;  
-
+    maxPWM = MAX_SLOW;  
+    gyroOffset = OFF_SLOW;
+    turnRatio = RATIO_SLOW;
+    if (turnMode == UTURN) {
+      maxPWM = MAX_UTURN;
+      gyroOffset = OFF_UTURN;
+      turnRatio = RATIO_UTURN;  
+      
     }
   } else if (turnMode == FAST) {
     gyroK =  GYROK_FAST;
@@ -309,74 +380,136 @@ void turn(int ref) {
     maxPWM = MAX_FAST;
     gyroOffset = OFF_FAST; //16
     turnRatio = RATIO_FAST; //8
+    
   }
   
-  int referenceDegree = 0;
-  if (ref > 0) {
-    referenceDegree = ref - gyroOffset; 
-  } else {
-    referenceDegree = ref + gyroOffset;       
-  }
-  boolean notComplete = true;
+  
+ 
   
   enableTimerInterrupt();
   degreesChanged = 0;
-
-  while(notComplete) {
-      zRate = gyro.readZ() - zOff;
-      long difference = millis() - previousTime;      
-   
-      actualDegreesChanged = degreesChanged/1000;
-      errorDegree = referenceDegree - actualDegreesChanged; 
-      int dError = (errorDegree - previousDegreeError)/difference;
-
-     if (errorDegree > 0) {
-      pwmRight = errorDegree*gyroK + dError*gyroKd;
-      if (pwmRight < minPWM) {
-        pwmRight = minPWM; 
-      } else if (pwmRight > maxPWM) {
-        pwmRight = maxPWM; 
-      }    
-      
-      if (turnMode == UTURN) {
-        pwmLeft = pwmRight/turnRatio;
-      } else {
-        pwmLeft = 0;
-      }
-
-      
-    } else {
-      pwmLeft = (-1 * errorDegree * gyroK) + dError*gyroKd; 
-      if (pwmLeft < minPWM ) {
-        pwmLeft = minPWM;
-      } else if (pwmLeft > maxPWM) {
-        pwmLeft = maxPWM;  
-      }
-      
-      if (turnMode == UTURN) {
-      
-         pwmRight = pwmLeft/turnRatio;
-      } else {
-        pwmRight = 0;
-      }
-    }
+  if (turnMode != UTURN) {
+    driveForward(FORWARD_BEGINNING, forwardSpeed);
+  }
   
-    if (abs(errorDegree) <= ZERO_MARGIN) {
-         umouse.brake();
-         notComplete = false;
-       } else if (digitalRead(SWITCH) == HIGH) {
-            umouse.stop();
-        }  else {
-         umouse.setPWM(pwmLeft, pwmRight);  
-       }           
+  int referenceDegree = 0;
+  int diffEdge = 45;
+  notComplete = true;
+  if (ref > 0) {
+    referenceDegree = ref - gyroOffset;
+    turnLeft = true;
+    stopEdge = redge + diffEdge; 
+    umouse.setPWM(0, minPWM);
+
+  } else {
+    turnRight = true;
+    referenceDegree = ref + gyroOffset;       
+    stopEdge = ledge + diffEdge; 
+    umouse.setPWM(minPWM, 0);
+  }
+  
+  while(turnLeft || turnRight) {
     
-//    //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms        
-     // Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";pwmLeft" + String(pwmLeft) + ";pwmRight" + String(pwmRight) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
-      previousDegreeError = errorDegree;
-      prevZRate = zRate;
-      previousTime = millis();
+//      zRate = gyro.readZ() - zOff;
+//      long difference = millis() - previousTime;      
+//   
+//      actualDegreesChanged = degreesChanged/1000;
+//      errorDegree = referenceDegree - actualDegreesChanged; 
+//      int dError = (errorDegree - previousDegreeError)/difference;
+//
+//     if (errorDegree > 0) {
+//      pwmRight = errorDegree*gyroK + dError*gyroKd;
+//      if (pwmRight < minPWM) {
+//        pwmRight = minPWM; 
+//      } else if (pwmRight > maxPWM) {
+//        pwmRight = maxPWM; 
+//      }    
+//      
+//       
+//      
+//      if (turnMode == UTURN) {
+//        pwmLeft = pwmRight/turnRatio;
+//      } else {
+//        pwmLeft = 0;
+//      }
+//
+//      //pwmLeft = pwmRight/turnRatio;
+//      //   end
+//    } else {
+//      pwmLeft = (-1 * errorDegree * gyroK) + dError*gyroKd; 
+//      if (pwmLeft < minPWM ) {
+//        pwmLeft = minPWM;
+//      } else if (pwmLeft > maxPWM) {
+//        pwmLeft = maxPWM;  
+//      }
+//      
+//      if (turnMode == UTURN) {
+//      
+//         pwmRight = pwmLeft/turnRatio;
+//      } else {
+//        pwmRight = 0;
+//      }
+//
+//       //pwmRight = pwmLeft/turnRatio;
+//    
+//// end
+//    }
+//    
+//       if (digitalRead(SWITCH) == HIGH) {
+//            umouse.stop();
+//        }  else {
+//         umouse.setPWM(pwmLeft, pwmRight);  
+//       }   
+    
+      
+//    if (abs(errorDegree) <= ZERO_MARGIN) {
+//         umouse.brake();
+//         notComplete = false;
+//       } else if (digitalRead(SWITCH) == HIGH) {
+//            umouse.stop();
+//        }  else {
+//         umouse.setPWM(pwmLeft, pwmRight);  
+//       }           
+//  
+//    if (abs(errorDegree) <= ZERO_MARGIN) {
+//         umouse.brake();
+//         notComplete = false;
+//       } else if (digitalRead(SWITCH) == HIGH) {
+//            umouse.stop();
+//        }  else {
+//         umouse.setPWM(pwmLeft, pwmRight);  
+//       }   
+//  
+    
+    
+//      if (turnLeft && ledge  >= end_leftEdge) {
+//         umouse.brake();
+//         notComplete = false;
+//       } else if (!turnLeft && redge  >= end_rightEdge) {
+//         umouse.brake();
+//         notComplete = false;   
+//       } else if (digitalRead(SWITCH) == HIGH) {
+//            umouse.stop();
+//        }  else {
+//         umouse.setPWM(pwmLeft, pwmRight);  
+//       }      
+    
+//    //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms 
+      //Serial.println(maxPWM);
+      //Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";pwmLeft" + String(pwmLeft) + ";pwmRight" + String(pwmRight) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
+//      previousDegreeError = errorDegree;
+//      prevZRate = zRate;
+//      previousTime = millis();
+//     Serial.println("ledge \t" + String(ledge) + "\t redge \t" + String(redge) + "\t stopEdge \t" + String(stopEdge)); // + "end_rightEdge \t" + String(end_rightEdge));  
+//     Serial.println(turnLeft);
+//     Serial.println(turnRight);
+//    
      
   }
-  driveForward(11);
-  disableTimerInterrupt();
+ if (turnMode != UTURN) {
+    //
+   driveForward(FORWARD_END, forwardSpeed);
+  }
+  umouse.brake();
+   disableTimerInterrupt();
 }
