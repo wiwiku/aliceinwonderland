@@ -7,11 +7,11 @@ Gyroscope gyro;
 
 #define ZERO_MARGIN 1
 
-#define MIN_SLOW 10
-#define MAX_SLOW 30
+#define MIN_SLOW 5
+#define MAX_SLOW 5
 #define GYROK_SLOW .3
-#define GYROKD_SLOW .1
-#define OFF_SLOW 15
+#define GYROKD_SLOW .25
+#define OFF_SLOW 18
 #define RATIO_SLOW 4
 
 #define MIN_FAST 8
@@ -47,7 +47,7 @@ volatile int accumulatedDegrees = 0;
 int prevZRate = 0;
 
 
-int errorDegree = 0;
+volatile int errorDegree = 0;
 int previousDegreeError = 0;
 int refDegree = 90;
 int pwmLeft = 0;
