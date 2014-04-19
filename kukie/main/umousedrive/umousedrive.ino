@@ -43,14 +43,8 @@ void setup() {
   gyro.configureSampleRate(9);
 
   zOff = gyro.readZ();
-  umouse.setPWM(pwmLeft, pwmRight);
-  if (LEFT > RIGHT) {
-    gyro_offset = LEFT/RIGHT;  
-  } else {
-    gyro_offset = RIGHT/LEFT;  
-  }
-  
-    pinMode(SWITCH, INPUT);
+  umouse.setPWM(pwmLeft, pwmRight);  
+  pinMode(SWITCH, INPUT);
     
   // initialize Timer1
   cli();          // disable global interrupts
@@ -79,9 +73,37 @@ void loop()
   //drivelib();
   //umouse.setPWM(10, 10);
   if (!done) {
+    switchTurnMode(SLOW);
     driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
     done = true;
   }
+     driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    //driveForward(10*edgePerCm);
+//    done = true;
+//  }
 //  Serial.print(ledge);
 //  Serial.print("\t");
 //  Serial.println(redge);
@@ -243,28 +265,35 @@ void drivelib() {
   }
 }
 
-void switchMode(int mode) {
+void switchTurnMode(int mode) {
   turnMode = mode;  
 }
 
 
 void turn(int ref) {
-  if (turnMode == SLOW) {
+  if (turnMode == SLOW || turnMode == UTURN) {
     gyroK = GYROK_SLOW;
     gyroKd = GYROKD_SLOW;
-    minPWM = SLOWMIN;
-    maxPWM = SLOWMAX;  
-    gyroOffset = OFF_SLOW;
-    turnRatio = RATIO_SLOW;
+    minPWM = MIN_SLOW;
+    if (turnMode == UTURN) { 
+     turnRatio = RATIO_UTURN;
+     gyroOffset = OFF_UTURN;
+     maxPWM = MAX_UTURN;  
+
+    } else {
+      turnRatio = RATIO_SLOW;     
+      gyroOffset = OFF_SLOW;
+      maxPWM = MAX_SLOW;  
+
+    }
   } else if (turnMode == FAST) {
     gyroK =  GYROK_FAST;
     gyroKd = GYROKD_FAST;
   
-    minPWM = FASTMIN;
-    maxPWM = FASTMAX;
+    minPWM = MIN_FAST;
+    maxPWM = MAX_FAST;
     gyroOffset = OFF_FAST; //16
     turnRatio = RATIO_FAST; //8
-    
   }
   
   int referenceDegree = 0;
@@ -289,8 +318,10 @@ void turn(int ref) {
         pwmRight = minPWM; 
       } else if (pwmRight > maxPWM) {
         pwmRight = maxPWM; 
-      }      
-      pwmLeft = pwmRight/turnRatio;
+      }    
+
+        pwmLeft = pwmRight/turnRatio;
+     
     } else {
       pwmLeft = (-1 * errorDegree * gyroK) + dError*gyroKd; 
       if (pwmLeft < minPWM ) {
@@ -298,7 +329,7 @@ void turn(int ref) {
       } else if (pwmLeft > maxPWM) {
         pwmLeft = maxPWM;  
       }
-      
+            
        pwmRight = pwmLeft/turnRatio;
     
     }
