@@ -39,51 +39,77 @@ volatile boolean moving = false;
 volatile unsigned long stopEdge = 0; 
 
 void calc(int x, int y, boolean returnState, int initSides) {
-  int curVal, small;
   while(!qEmpty()) {
     Serial.println(qCount());
     int i = qPop() & 255;//double-check
     int row, col;
     iToRowCol( row, col, i );
 
+    // Get smallest neighbor
+    byte small = -1; //getFFScore(row, col); //there should be some neighbor smaller than it
+    if (!returnState && (row == 7 || row == 8) && (col == 7 || col == 8)) {
+      small = getFFScore(row, col);
+      small--;
+    } 
+    else if (returnState && (row == 0) && (col == 0)) {
+      small = getFFScore(row, col);
+      small--;
+    }  
+    else {
+      if(!wallExists(row, col, EAST)) {
+        if (small == -1 || getFFScore(row+1, col) < small) {
+          small = getFFScore(row+1, col);
+        }
+      }
+
+      if(!wallExists(row, col, NORTH)) {
+        if (small == -1 || getFFScore(row, col+1) < small) {
+          small = getFFScore(row, col+1);
+        }
+      }
+
+      if(!wallExists(row, col, WEST)) {
+        if (small == -1 || getFFScore(row-1, col) < small) {
+          small = getFFScore(row-1, col);
+        }
+      }
+
+      if(!wallExists(row, col, SOUTH)) {
+        if (small == -1 || getFFScore(row, col-1) < small) {
+          small = getFFScore(row, col-1);
+        }
+      }
+    }
+    Serial.println("One");
+
+    small++; //value that it should be
+    int curVal = getFFScore(row, col); //value that it is
+
+    if(curVal != UNDEFINED && curVal == small) { 
+      continue; 
+    }
+
+    // Floodfill this cell  
+    setFFScore(row, col, small);
+
     // Check the cell to the north
     if(!wallExists(row, col, NORTH)) {
-      curVal = getFFScore(row, col+1);
-      small = smallNeigh(row, col+1, returnState) + 1;
-      if(curVal == UNDEFINED || curVal != small) { 
-        setFFScore(row, col+1, small);
-        qPush( rowColToI(row, col+1));
-      }
+      qPush( rowColToI(row, col+1));
     }
 
     // Check the cel to the east
     if(!wallExists(row, col, EAST)) {
-      curVal = getFFScore(row+1, col);
-      small = smallNeigh(row+1, col, returnState) + 1;
-      if(curVal == UNDEFINED || curVal != small) { 
-        setFFScore(row+1, col, small);
-        qPush( rowColToI(row+1, col));
-      }
+      qPush( rowColToI(row+1, col));
     }
 
     // Check the cell to the south
     if(!wallExists(row, col, SOUTH)) {
-      curVal = getFFScore(row, col-1);
-      small = smallNeigh(row, col-1, returnState) + 1;
-      if(curVal == UNDEFINED || curVal != small) { 
-        setFFScore(row, col-1, small);
-        qPush( rowColToI(row, col-1));
-      }
+      qPush( rowColToI(row, col-1));
     }
 
     // Check the cell to the west
     if(!wallExists(row, col, WEST)) {
-      curVal = getFFScore(row-1, col);
-      small = smallNeigh(row-1, col, returnState) + 1;
-      if(curVal == UNDEFINED || curVal != small) { 
-        setFFScore(row-1, col+1, small);
-        qPush( rowColToI(row-1, col));
-      }
+      qPush( rowColToI(row-1, col));
     }
   }
 }
@@ -125,16 +151,15 @@ void printMazeInfo(int x, int y) {
           else {
             Serial.print(" ");
           }
-//          if (mazej == x && mazei == y) {
-//            Serial.print("XX");
-//          } 
-           //else {
+          if (mazej == x && mazei == y) {
+            Serial.print("XX");
+          } else {
             thisVal = getFFScore(mazej, mazei);
             if (thisVal < 10) {
               Serial.print(" ");
             }
             Serial.print(thisVal);
-//          }
+          }
           if ((thisWall & 2) == 2) {
             Serial.print("|");
           } 
@@ -258,8 +283,6 @@ void initializeThings() {
   curRun = readMazeFromMem();
   //curRun = 0;
   initializeFloodfill(returnState);
-  Serial.println(qCount());
-  calc(7,7,returnState, 15);
   if (DEBUG) { 
     printMazeInfo(0,0); 
   }

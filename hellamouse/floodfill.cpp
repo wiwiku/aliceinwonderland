@@ -126,8 +126,14 @@ void pushIfValid(int x, int y) {
   }
 }
 
-int smallNeigh(int row, int col, boolean returnState) {
-  // Get smallest neighbor
+/*For each cell in the queue, check that its value is 1+lowest neighbor. If not, set it and check its neighbors*/
+void calculateFFValues(int x, int y, boolean returnState, int initSides) {
+  while(!queue.isEmpty()) {
+    int i = queue.pop() & 255;//double-check
+    int row, col;
+    iToRowCol( row, col, i );
+
+    // Get smallest neighbor
     byte small = -1; //getFFScore(row, col); //there should be some neighbor smaller than it
     if (!returnState && (row == 7 || row == 8) && (col == 7 || col == 8)) {
       small = getFFScore(row, col);
@@ -164,106 +170,60 @@ int smallNeigh(int row, int col, boolean returnState) {
     }
 
     small++; //value that it should be
-    return getFFScore(row, col); //value that it is
-}
-/*For each cell in the queue, check that its value is 1+lowest neighbor. If not, set it and check its neighbors*/
-void calculateFFValues(int x, int y, boolean returnState, int initSides) {
-  int curVal, small;
-  while(!queue.isEmpty()) {
-    int i = queue.pop() & 255;//double-check
-    int row, col;
-    iToRowCol( row, col, i );
+    int curVal = getFFScore(row, col); //value that it is
+
+    if(curVal != UNDEFINED && curVal == small) { 
+      continue; 
+    }
+
+    // Floodfill this cell  
+    setFFScore(row, col, small);
 
     // Check the cell to the north
     if(!wallExists(row, col, NORTH)) {
-      curVal = getFFScore(row, col+1);
-      small = smallNeigh(row, col+1, returnState) + 1;
-      if(curVal == UNDEFINED || curVal != small) { 
-        setFFScore(row, col+1, small);
-        queue.push( rowColToI(row, col+1));
-      }
+      queue.push( rowColToI(row, col+1));
     }
 
     // Check the cel to the east
     if(!wallExists(row, col, EAST)) {
-      curVal = getFFScore(row+1, col);
-      small = smallNeigh(row+1, col, returnState) + 1;
-      if(curVal == UNDEFINED || curVal != small) { 
-        setFFScore(row+1, col, small);
-        queue.push( rowColToI(row+1, col));
-      }
+      queue.push( rowColToI(row+1, col));
     }
 
     // Check the cell to the south
     if(!wallExists(row, col, SOUTH)) {
-      curVal = getFFScore(row, col-1);
-      small = smallNeigh(row, col-1, returnState) + 1;
-      if(curVal == UNDEFINED || curVal != small) { 
-        setFFScore(row, col-1, small);
-        queue.push( rowColToI(row, col-1));
-      }
+      queue.push( rowColToI(row, col-1));
     }
 
     // Check the cell to the west
     if(!wallExists(row, col, WEST)) {
-      curVal = getFFScore(row-1, col);
-      small = smallNeigh(row-1, col, returnState) + 1;
-      if(curVal == UNDEFINED || curVal != small) { 
-        setFFScore(row-1, col+1, small);
-        queue.push( rowColToI(row-1, col));
-      }
+      queue.push( rowColToI(row-1, col));
     }
   }
 }
 
 /* Update values that need to be updated */
 void updateFloodfill(int x, int y, int newWalls, boolean returnState, int initSides) {
-  int curVal, small;
+
   /*Adds the cell in question and cells whose walls have changed to queue*/
-  curVal = getFFScore(x, y);
-      small = smallNeigh(x, y, returnState) + 1;
-      if(curVal == UNDEFINED || curVal != small) { 
-        setFFScore(x, y, small);
-        queue.push( rowColToI(x, y));
-      }
+  queue.push(rowColToI(x, y));
 
   //for each new wall, add the adjacent cell to the queue
   if(newWallExists(newWalls, EAST) || getFFScore(x+1, y) == UNDEFINED) {
-    curVal = getFFScore(x+1, y);
-      small = smallNeigh(x+1, y, returnState) + 1;
-      if(curVal == UNDEFINED || curVal != small) { 
-        setFFScore(x+1, y, small);
-        pushIfValid(x+1, y);
-      }
+    pushIfValid(x+1, y);
   }
 
   if(newWallExists(newWalls, NORTH) || getFFScore(x, y+1) == UNDEFINED) {
-    curVal = getFFScore(x, y+1);
-      small = smallNeigh(x, y+1, returnState) + 1;
-      if(curVal == UNDEFINED || curVal != small) { 
-        setFFScore(x, y+1, small);
-        pushIfValid(x, y+1);
-      }
+    pushIfValid(x, y+1);
   }
 
   if(newWallExists(newWalls, WEST) || getFFScore(x-1, y) == UNDEFINED) {
-    curVal = getFFScore(x-1, y);
-      small = smallNeigh(x-1, y, returnState) + 1;
-      if(curVal == UNDEFINED || curVal != small) { 
-        setFFScore(x-1, y, small);
-        pushIfValid(x-1, y);
-      }
+    pushIfValid(x-1, y);
   }
 
   if(newWallExists(newWalls, SOUTH) || getFFScore(x, y-1) == UNDEFINED) {
-    curVal = getFFScore(x, y-1);
-      small = smallNeigh(x, y-1, returnState) + 1;
-      if(curVal == UNDEFINED || curVal != small) { 
-        setFFScore(x, y-1, small);
-        pushIfValid(x, y-1);
-      }
+    pushIfValid(x, y-1);
   }
-  //calculateFFValues(x, y, returnState, initSides);
+  calculateFFValues(x, y, returnState, initSides);
 }
 
 /* Initial starting maze values */
