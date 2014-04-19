@@ -74,14 +74,14 @@ void loop()
   //int cm = 90;
   //driveForward(cm * edgePerCm);
   //pidlib();
-  //irdistlib();
+  irvallib();
   //enclib();
   //drivelib();
   //umouse.setPWM(10, 10);
-  if (!done) {
-    driveBackward(edgePerSq, backwardSpeed);
-    done = true;
-  }
+//  if (!done) {
+//    driveForward(10*edgePerSq, 30);
+//    done = true;
+//  }
 //  Serial.print(ledge);
 //  Serial.print("\t");
 //  Serial.println(redge);
@@ -90,6 +90,10 @@ void loop()
 void lincrement() {
   ledge++;
   if (moving) {
+    if (flsensor.getCm() < 13.5 && frsensor.getCm() < 13.5) {
+      umouse.brake();
+      moving = false;
+    }
     if (ledge >= stopEdge) {
       umouse.brake();
       moving = false;
@@ -119,7 +123,11 @@ void driveForward(unsigned long deltaEdge, int fspeed) {
       double lcm = dlsensor.getCm();
       double rcm = drsensor.getCm();
       int pidout = floor(pid.getPIDterm(lcm, rcm));
-      umouse.setPWM(fspeed - pidout, fspeed + pidout);
+      if (pidout > 0) {
+        umouse.setPWM(fspeed, fspeed + pidout);
+      } else {
+        umouse.setPWM(fspeed - pidout, fspeed);
+      }
     } else {
       umouse.setPWM(fspeed, fspeed);
     }
@@ -132,8 +140,37 @@ void driveForward(unsigned long deltaEdge, int fspeed) {
   Serial.println(stopEdge);
 }
 
+// This function will drive the mouse forward for a specified number of edges.
+void driveForwardPID(unsigned long deltaEdge, int fspeed) {
+//  float kpdrive = 0.1;
+//  float kddrive = 0.00000;
+  stopEdge = ledge + deltaEdge;
+  moving = true;
+  while (moving) {
+    unsigned long edrive = stopEdge - ledge;
+    int basespeed = (edrive > 3 * edgePerSq) ? 3 * fspeed : fspeed;
+    if (lsensor.hasWall() && rsensor.hasWall()) { // do pid
+      double lcm = dlsensor.getCm();
+      double rcm = drsensor.getCm();
+      int pidout = floor(pid.getPIDterm(lcm, rcm));
+      umouse.setPWM(basespeed - pidout, basespeed + pidout);
+    } else {
+      umouse.setPWM(basespeed, basespeed);
+    }
+    Serial.print(umouse.getPWMA());
+    Serial.print("\t");
+    Serial.println(umouse.getPWMB());
+  }
+  umouse.brake();
+  Serial.print(deltaEdge);
+  Serial.print("\t");
+  Serial.print(ledge);
+  Serial.print("\t");
+  Serial.println(stopEdge);
+}
+
 // This function will drive the mouse backward for a specified number of edges.
-void driveBackward(unsigned long deltaEdge, int bSpeed) {
+void driveBackward(unsigned long deltaEdge, int bspeed) {
   int timeout = 30;
   unsigned long prevedge = ledge;
   stopEdge = ledge + deltaEdge;
@@ -152,9 +189,9 @@ void driveBackward(unsigned long deltaEdge, int bSpeed) {
       double lcm = dlsensor.getCm();
       double rcm = drsensor.getCm();
       int pidout = floor(pid.getPIDterm(lcm, rcm));
-      umouse.setPWM(bSpeed - pidout, bSpeed + pidout);
+      umouse.setPWM(bspeed - pidout, bspeed + pidout);
     } else {
-      umouse.setPWM(bSpeed, bSpeed);
+      umouse.setPWM(bspeed, bspeed);
     }
   }
   if (timeout <= 0) {
