@@ -26,15 +26,11 @@ int arrlimit = 10;
 unsigned long startedge = 0;
 
 boolean done = false;
-volatile boolean notComplete = false;
 volatile boolean goingforward = false;
 
 volatile unsigned long stopEdge = 0;
 
 int pwmIncr = 10;
-
-
-int referenceDegree = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -80,37 +76,31 @@ void loop()
     switchTurnMode(SLOW);
     driveForward(edgePerSq);
     driveForward(edgePerSq);
-    //driveForward(edgePerSq);
-    turn(90);
-//    driveForward(edgePerSq);
-//    //driveForward(edgePerSq);
-//
-//    turn(90);
-//    driveForward(edgePerSq);
-//    //   driveForward(edgePerSq);
-//
-//    turn(90);
-//    driveForward(edgePerSq);
-//    //driveForward(edgePerSq);
-//
-//    turn(90);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
     done = true;
   }
-//    driveForward(edgePerSq);
-//    //driveForward(edgePerSq);
-//    turn(90);
-//    driveForward(edgePerSq);
-//    //driveForward(edgePerSq);
-//
-//    turn(90);
-//    driveForward(edgePerSq);
-//    //   driveForward(edgePerSq);
-//
-//    turn(90);
-//    driveForward(edgePerSq);
-//    //driveForward(edgePerSq);
-//
-//    turn(90);
+     driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
+    driveForward(edgePerSq);
+    driveForward(edgePerSq);
+    turn(-90);
     //driveForward(10*edgePerCm);
 //    done = true;
 //  }
@@ -136,59 +126,10 @@ void rincrement() {
 //Update gyro's angle rate. 
 ISR(TIMER1_COMPA_vect)
 {
-  if (notComplete) {
-      //digitalWrite(LEDPIN, !digitalRead(LEDPIN));
-    if (abs(zRate) > LOW_FILTER) {
-      degreesChanged += zRate*SAMPLE_RATE; //rate * time in ms * 1 s / 1000 ms 
-    }
-    
-    long difference = millis() - previousTime;      
-
-    
-    actualDegreesChanged = degreesChanged/1000;
-    errorDegree = referenceDegree - actualDegreesChanged; 
-    int dError = (errorDegree - previousDegreeError)/difference;
-    
-    if (errorDegree > 0) {
-      pwmRight = errorDegree*gyroK + dError*gyroKd;
-      if (pwmRight < minPWM) {
-        pwmRight = minPWM; 
-      } else if (pwmRight > maxPWM) {
-        pwmRight = maxPWM; 
-      }    
-
-        pwmLeft = pwmRight/turnRatio;
-     
-    } else {
-      pwmLeft = (-1 * errorDegree * gyroK) + dError*gyroKd; 
-      if (pwmLeft < minPWM ) {
-        pwmLeft = minPWM;
-      } else if (pwmLeft > maxPWM) {
-        pwmLeft = maxPWM;  
-      }
-            
-       pwmRight = pwmLeft/turnRatio;
-    
-    }
-  
-    if (abs(errorDegree) <= ZERO_MARGIN) {
-       umouse.brake();
-       notComplete = false;
-     } else if (digitalRead(SWITCH) == HIGH) {
-          umouse.stop();
-      }  else {
-       umouse.setPWM(pwmLeft, pwmRight);  
-     }           
-  
-  
-  //    //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms        
-      //Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";degreesChanged " + String(degreesChanged) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
-      previousDegreeError = errorDegree;
-      prevZRate = zRate;
-      previousTime = millis();
-  }  
-  
-
+  //digitalWrite(LEDPIN, !digitalRead(LEDPIN));
+  if (abs(zRate) > LOW_FILTER) {
+    degreesChanged += zRate*SAMPLE_RATE; //rate * time in ms * 1 s / 1000 ms 
+  }
 }
 
 // This function will drive the mouse forward for a specified number of edges.
@@ -330,7 +271,7 @@ void switchTurnMode(int mode) {
 
 
 void turn(int ref) {
- if (turnMode == SLOW || turnMode == UTURN) {
+  if (turnMode == SLOW || turnMode == UTURN) {
     gyroK = GYROK_SLOW;
     gyroKd = GYROKD_SLOW;
     minPWM = MIN_SLOW;
@@ -355,22 +296,58 @@ void turn(int ref) {
     turnRatio = RATIO_FAST; //8
   }
   
-  referenceDegree = 0;
+  int referenceDegree = 0;
   if (ref > 0) {
     referenceDegree = ref - gyroOffset; 
   } else {
     referenceDegree = ref + gyroOffset;       
   }
-  notComplete = true;
+  boolean notComplete = true;
   degreesChanged = 0;
   while(notComplete) {
-    //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms        
-     Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";degreesChanged " + String(degreesChanged) + "; Rate: " + String(zRate)); //+ "; Diff " + String(difference) );
-
+      long difference = millis() - previousTime;      
       zRate = gyro.readZ() - zOff;
-  }     
+     
+      actualDegreesChanged = degreesChanged/1000;
+      errorDegree = referenceDegree - actualDegreesChanged; 
+      int dError = (errorDegree - previousDegreeError)/difference;
+
+     if (errorDegree > 0) {
+      pwmRight = errorDegree*gyroK + dError*gyroKd;
+      if (pwmRight < minPWM) {
+        pwmRight = minPWM; 
+      } else if (pwmRight > maxPWM) {
+        pwmRight = maxPWM; 
+      }    
+
+        pwmLeft = pwmRight/turnRatio;
+     
+    } else {
+      pwmLeft = (-1 * errorDegree * gyroK) + dError*gyroKd; 
+      if (pwmLeft < minPWM ) {
+        pwmLeft = minPWM;
+      } else if (pwmLeft > maxPWM) {
+        pwmLeft = maxPWM;  
+      }
+            
+       pwmRight = pwmLeft/turnRatio;
     
-      
-
-
+    }
+  
+    if (abs(errorDegree) <= ZERO_MARGIN) {
+         umouse.brake();
+         notComplete = false;
+       } else if (digitalRead(SWITCH) == HIGH) {
+            umouse.stop();
+        }  else {
+         umouse.setPWM(pwmLeft, pwmRight);  
+       }           
+    
+//    //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms        
+      //Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";degreesChanged " + String(degreesChanged) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
+      previousDegreeError = errorDegree;
+      prevZRate = zRate;
+      previousTime = millis();
+     
+  }
 }
