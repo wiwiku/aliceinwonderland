@@ -8,3 +8,5 @@ const int WEST = 8;
 const int ALLWALLS = 15;
 const int UNDEFINED = 255; //we won't have a spiral maze. if this val is > 255, better change the flip method
 
+
+

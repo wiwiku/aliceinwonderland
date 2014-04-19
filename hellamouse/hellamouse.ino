@@ -1,6 +1,5 @@
-
 #include <QueueList.h>
-#include "Top.h"
+//#include "Top.h"
 #include <IRsensor.h>
 #include <QueueList.h>
 #include <EEPROM.h>
@@ -8,7 +7,14 @@
 #include "core.h"
 #include "floodfill.h"
 #include "motors.h"
+#include "Driver.h"
+#include "Encoder.h"
+#include "PID.h"
+#include "Gyroscope.h"
+#include "Gyro.h"
+#include <Wire.h>
 
+/* Floodfill */
 int x = 0;
 int y = 0;
 int curDir;
@@ -117,8 +123,7 @@ void initializeThings() {
   t1 = millis();
   initializeFloodfill(returnState);
   //calc(0,0,returnState);
-  initializeSensors();
-
+  initializeDriver();
   t2 = millis();
   Serial.print("Time is: ");
   Serial.println(t2-t1);
@@ -127,6 +132,7 @@ void initializeThings() {
   }
 }
 
+//DEBUGGING purposes
 void calc(int x, int y, boolean returnState) {
   while(!qEmpty()) {
     int i = qPop() & 255;//double-check
