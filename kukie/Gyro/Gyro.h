@@ -5,14 +5,17 @@ Gyroscope gyro;
 #define GYRO_CALIBRATION 2.61
 #define SAMPLE_RATE 10
 
-#define ZERO_MARGIN 1
+#define ZERO_MARGIN 0
 
-#define MIN_SLOW 5
-#define MAX_SLOW 5
+#define MIN_SLOW 10
+#define MAX_SLOW 10
 #define GYROK_SLOW .3
 #define GYROKD_SLOW .25
-#define OFF_SLOW 18
+#define OFF_SLOW 10
 #define RATIO_SLOW 4
+
+#define FORWARD_BEGINNING 5
+#define FORWARD_END 21
 
 #define MIN_FAST 8
 #define MAX_FAST 100
@@ -21,10 +24,9 @@ Gyroscope gyro;
 #define OFF_FAST 16
 #define RATIO_FAST 8
 
-#define MAX_UTURN 10
-#define OFF_UTURN 15
+#define MAX_UTURN 7
+#define OFF_UTURN 7
 #define RATIO_UTURN -1
-
 
 float gyroK = .2; //2
 float gyroKd = .1; //1.4

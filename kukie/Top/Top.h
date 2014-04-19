@@ -27,8 +27,8 @@ const int frontleft = A3;
 const int frontright = A2;
 const int diagright = A1;
 const int right = A0;
-int irThSide = 15;
-int irThDiag = 15;
+int irThSide = 25;
+int irThDiag = 25;
 int irThFront = 15;
 
 const float lc1 = 981.58;
