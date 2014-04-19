@@ -63,6 +63,20 @@ void setup() {
   sei();          // enable global interrupts
 }
 
+void enableTimerInterrupt() {
+ // initialize Timer1
+  cli();          // disable global interrupts  
+  TIMSK1 |= (1 << OCIE1A);
+  sei();          // enable global interrupts
+}
+
+void disableTimerInterrupt() {
+  cli();          // disable global interrupts  
+  TIMSK1 |= (0 << OCIE1A);
+  sei();          // enable global interrupts
+  
+}
+
 void loop()
 {
   //int cm = 90;
@@ -74,31 +88,29 @@ void loop()
   //umouse.setPWM(10, 10);
   if (!done) {
     switchTurnMode(SLOW);
-    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    turn(-90);
+//    driveForward(edgePerSq);
     driveForward(edgePerSq);
     driveForward(edgePerSq);
     turn(-90);
     driveForward(edgePerSq);
-    driveForward(edgePerSq);
+//    driveForward(edgePerSq);
     turn(-90);
     driveForward(edgePerSq);
-    driveForward(edgePerSq);
+//    driveForward(edgePerSq);
     turn(-90);
+//    driveForward(edgePerSq);
+//    turn(-90);
     done = true;
   }
      driveForward(edgePerSq);
+//    driveForward(edgePerSq);
+    turn(-90);
+//    driveForward(edgePerSq);
+//    driveForward(edgePerSq);
+//    driveForward(edgePerSq);
     driveForward(edgePerSq);
     turn(-90);
-    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    turn(-90);
-    driveForward(edgePerSq);
-    driveForward(edgePerSq);
-    turn(-90);
-    driveForward(edgePerSq);
+//    driveForward(edgePerSq);
     driveForward(edgePerSq);
     turn(-90);
     //driveForward(10*edgePerCm);
@@ -126,7 +138,7 @@ void rincrement() {
 //Update gyro's angle rate. 
 ISR(TIMER1_COMPA_vect)
 {
-  //digitalWrite(LEDPIN, !digitalRead(LEDPIN));
+  digitalWrite(LEDPIN, !digitalRead(LEDPIN));
   if (abs(zRate) > LOW_FILTER) {
     degreesChanged += zRate*SAMPLE_RATE; //rate * time in ms * 1 s / 1000 ms 
   }
@@ -271,6 +283,9 @@ void switchTurnMode(int mode) {
 
 
 void turn(int ref) {
+  
+  driveForward(11);
+
   if (turnMode == SLOW || turnMode == UTURN) {
     gyroK = GYROK_SLOW;
     gyroKd = GYROKD_SLOW;
@@ -303,11 +318,14 @@ void turn(int ref) {
     referenceDegree = ref + gyroOffset;       
   }
   boolean notComplete = true;
+  
+  enableTimerInterrupt();
   degreesChanged = 0;
+
   while(notComplete) {
-      long difference = millis() - previousTime;      
       zRate = gyro.readZ() - zOff;
-     
+      long difference = millis() - previousTime;      
+   
       actualDegreesChanged = degreesChanged/1000;
       errorDegree = referenceDegree - actualDegreesChanged; 
       int dError = (errorDegree - previousDegreeError)/difference;
@@ -319,9 +337,14 @@ void turn(int ref) {
       } else if (pwmRight > maxPWM) {
         pwmRight = maxPWM; 
       }    
-
+      
+      if (turnMode == UTURN) {
         pwmLeft = pwmRight/turnRatio;
-     
+      } else {
+        pwmLeft = 0;
+      }
+
+      
     } else {
       pwmLeft = (-1 * errorDegree * gyroK) + dError*gyroKd; 
       if (pwmLeft < minPWM ) {
@@ -329,9 +352,13 @@ void turn(int ref) {
       } else if (pwmLeft > maxPWM) {
         pwmLeft = maxPWM;  
       }
-            
-       pwmRight = pwmLeft/turnRatio;
-    
+      
+      if (turnMode == UTURN) {
+      
+         pwmRight = pwmLeft/turnRatio;
+      } else {
+        pwmRight = 0;
+      }
     }
   
     if (abs(errorDegree) <= ZERO_MARGIN) {
@@ -344,10 +371,12 @@ void turn(int ref) {
        }           
     
 //    //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms        
-      //Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";degreesChanged " + String(degreesChanged) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
+     // Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";pwmLeft" + String(pwmLeft) + ";pwmRight" + String(pwmRight) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
       previousDegreeError = errorDegree;
       prevZRate = zRate;
       previousTime = millis();
      
   }
+  driveForward(11);
+  disableTimerInterrupt();
 }
