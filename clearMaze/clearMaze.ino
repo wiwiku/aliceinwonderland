@@ -6,6 +6,7 @@ int rowColToI(int row, int col) {
 }
 
 void setup() {
+  Serial.begin(9600);
   for (int mazei = 0; mazei < LENGTH; mazei++) {
     for (int mazej = 0; mazej < LENGTH; mazej++) 
       EEPROM.write(rowColToI(mazei, mazej), 0);

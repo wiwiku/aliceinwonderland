@@ -9,7 +9,7 @@ bool wallExists(int row, int col, int dir);
 bool newWallExists(int newWalls, int dir);
 int minNeighbor(int x, int y);
 void getAdjacentCell(int &row, int &col, int dir);
-int updateFloodfill(int row, int col, int newWalls, boolean returnState);
+int updateFloodfill(int row, int col, int newWalls, boolean returnState, int initSides);
 void flipFFScore(boolean returnState);
 void pushIfValid(int x, int y);
 int readMazeFromMem();

@@ -1,5 +1,4 @@
 #include <EEPROM.h>
-
 #include <QueueList.h>
 #include "core.h"
 
@@ -128,7 +127,7 @@ void pushIfValid(int x, int y) {
 }
 
 /*For each cell in the queue, check that its value is 1+lowest neighbor. If not, set it and check its neighbors*/
-void calculateFFValues(int x, int y, boolean returnState) {
+void calculateFFValues(int x, int y, boolean returnState, int initSides) {
   while(!queue.isEmpty()) {
     int i = queue.pop() & 255;//double-check
     int row, col;
@@ -203,7 +202,7 @@ void calculateFFValues(int x, int y, boolean returnState) {
 }
 
 /* Update values that need to be updated */
-void updateFloodfill(int x, int y, int newWalls, boolean returnState) {
+void updateFloodfill(int x, int y, int newWalls, boolean returnState, int initSides) {
 
   /*Adds the cell in question and cells whose walls have changed to queue*/
   queue.push(rowColToI(x, y));
@@ -224,7 +223,7 @@ void updateFloodfill(int x, int y, int newWalls, boolean returnState) {
   if(newWallExists(newWalls, SOUTH) || getFFScore(x, y-1) == UNDEFINED) {
     pushIfValid(x, y-1);
   }
-  //calculateFFValues(x, y, returnState);
+  calculateFFValues(x, y, returnState, initSides);
 }
 
 /* Initial starting maze values */
@@ -242,8 +241,8 @@ void initializeFloodfill(boolean returnState) {
   setFFScore(8, 8, 0);
 
   //set the initial cell values
-  updateFloodfill(7, 7, 12, returnState);
-  calculateFFValues(7,7,returnState);
+  updateFloodfill(7, 7, 12, returnState, 15);
+  //calculateFFValues(7,7,returnState, 15);
 }
 
 /* Sets (0,0) to be the goal state and recalculates floodfill values */
@@ -254,7 +253,7 @@ void flipFFScore(boolean returnState) {
     }
   }
   setFFScore(0,0,0);
-  updateFloodfill(0,0,3, returnState);
+  updateFloodfill(0,0,3, returnState, 3);
 }
 
 /* Read values stored in EEPROM */
