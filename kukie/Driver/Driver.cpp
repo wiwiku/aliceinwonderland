@@ -37,14 +37,14 @@ void Driver::setPWM(int a, int b) {
     } else if (_pwma < 0) {
         a1state = LOW; a2state = HIGH;
     } else {
-        a1state = LOW; a2state = LOW;
+        a1state = HIGH; a2state = HIGH;
     }
     if (_pwmb > 0) {
         b1state = HIGH; b2state = LOW;
     } else if (_pwmb < 0) {
         b1state = LOW; b2state = HIGH;
     } else {
-        b1state = LOW; b2state = LOW;
+        b1state = HIGH; b2state = HIGH;
     }
 
     digitalWrite(_a1, a1state);
@@ -65,17 +65,17 @@ int Driver::getPWMB() {
 
 // Stops the car, but car may coast.
 void Driver::stop() {
-    setPWM(0, 0);
+    _pwma = 0;
+    _pwmb = 0;
+    digitalWrite(_a1, LOW);
+    digitalWrite(_a2, LOW);
+    analogWrite(_pwmapin, _pwma);
+    digitalWrite(_b1, LOW);
+    digitalWrite(_b2, LOW);
+    analogWrite(_pwmbpin, _pwmb);
 }
 
 // Brake is stronger than stop (which coasts).
 void Driver::brake() {
-    _pwma = 0;
-    _pwmb = 0;
-    digitalWrite(_a1, HIGH);
-    digitalWrite(_a2, HIGH);
-    analogWrite(_pwmapin, _pwma);
-    digitalWrite(_b1, HIGH);
-    digitalWrite(_b2, HIGH);
-    analogWrite(_pwmbpin, _pwmb);
+    setPWM(0, 0);
 }
