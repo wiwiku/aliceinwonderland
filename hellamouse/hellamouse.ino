@@ -1,3 +1,5 @@
+#include <Wire.h>
+
 #include <QueueList.h>
 #include "Top.h"
 #include <IRsensor.h>
@@ -9,6 +11,14 @@
 #include "Encoder.h"
 #include "Driver.h"
 #include "IRsensor.h"
+#include "Gyro.h"
+#include "Gyroscope.h"
+
+Gyroscope gyro;
+
+int switchPin = 10;
+
+boolean isRunning;
 
 /* Maze, mouse position, and wall values */
 int x = 0;
@@ -17,7 +27,7 @@ int curDir;
 int walls = 0;
 int newWalls = 0;
 int nextRow, nextCol, nextVal;
-int dir, row, col, val, curRun; 
+int dir, row, col, val, curRun, sw; 
 boolean hasWall, returnState;
 
 /* Components */
@@ -153,7 +163,8 @@ void printMazeInfo(int x, int y) {
           }
           if (mazej == x && mazei == y) {
             Serial.print("XX");
-          } else {
+          } 
+          else {
             thisVal = getFFScore(mazej, mazei);
             if (thisVal < 10) {
               Serial.print(" ");
@@ -201,15 +212,23 @@ void printMazeInfo(int x, int y) {
 int senseWalls(int dir) {
   int walls = 0;
   if (lsensor.hasWall()) {
-    if (dir == 1) { walls += SOUTH; }
-    else { walls += (dir >> 1); }
+    if (dir == 1) { 
+      walls += SOUTH; 
+    }
+    else { 
+      walls += (dir >> 1); 
+    }
   }
-  
+
   if (rsensor.hasWall()) {
-    if (dir == 8) { walls += 1; }
-    else { walls += (dir << 1); }
+    if (dir == 8) { 
+      walls += 1; 
+    }
+    else { 
+      walls += (dir << 1); 
+    }
   }
-  
+
   if (flsensor.hasWall() && frsensor.hasWall()) {
     walls += 1;
   }
@@ -231,6 +250,79 @@ void rincrement() {
 }
 
 /* DRIVING */
+void turn(int ref) {
+  if (turnMode == SLOW) {
+    gyroK = GYROK_SLOW;
+    gyroKd = GYROKD_SLOW;
+    minPWM = MIN_SLOW; //SLOWMIN;
+    maxPWM = MAX_SLOW; //SLOWMAX;  
+    gyroOffset = OFF_SLOW;
+    turnRatio = RATIO_SLOW;
+  } else if (turnMode == FAST) {
+    gyroK =  GYROK_FAST;
+    gyroKd = GYROKD_FAST;
+  
+    minPWM = MIN_FAST; //FASTMIN;
+    maxPWM = MAX_FAST; //FASTMAX;
+    gyroOffset = OFF_FAST; //16
+    turnRatio = RATIO_FAST; //8
+    
+  }
+  
+  int referenceDegree = 0;
+  if (ref > 0) {
+    referenceDegree = ref - gyroOffset; 
+  } else {
+    referenceDegree = ref + gyroOffset;       
+  }
+  boolean notComplete = true;
+  degreesChanged = 0;
+  while(notComplete) {
+      long difference = millis() - previousTime;      
+      zRate = gyro.readZ() - zOff;
+     
+      actualDegreesChanged = degreesChanged/1000;
+      errorDegree = referenceDegree - actualDegreesChanged; 
+      int dError = (errorDegree - previousDegreeError)/difference;
+
+     if (errorDegree > 0) {
+      pwmRight = errorDegree*gyroK + dError*gyroKd;
+      if (pwmRight < minPWM) {
+        pwmRight = minPWM; 
+      } else if (pwmRight > maxPWM) {
+        pwmRight = maxPWM; 
+      }      
+      pwmLeft = pwmRight/turnRatio;
+    } else {
+      pwmLeft = (-1 * errorDegree * gyroK) + dError*gyroKd; 
+      if (pwmLeft < minPWM ) {
+        pwmLeft = minPWM;
+      } else if (pwmLeft > maxPWM) {
+        pwmLeft = maxPWM;  
+      }
+      
+       pwmRight = pwmLeft/turnRatio;
+    
+    }
+  
+    if (abs(errorDegree) <= ZERO_MARGIN) {
+         umouse.brake();
+         notComplete = false;
+       } else if (digitalRead(SWITCH) == HIGH) {
+            umouse.stop();
+        }  else {
+         umouse.setPWM(pwmLeft, pwmRight);  
+       }           
+    
+//    //Serial.println(accumulatedDegrees*difference)/1000; //rate * time in ms * 1 s / 1000 ms        
+      //Serial.println("Degrees Turned:" + String(actualDegreesChanged) + ";degreesChanged " + String(degreesChanged) + "; Rate: " + String(zRate) + "; Diff " + String(difference) );
+      previousDegreeError = errorDegree;
+      prevZRate = zRate;
+      previousTime = millis();
+     
+  }
+}
+
 // This function will drive the mouse forward for a specified number of edges.
 void driveForward(unsigned long deltaEdge, int fspeed) {
   stopEdge = ledge + deltaEdge;
@@ -242,31 +334,40 @@ void driveForward(unsigned long deltaEdge, int fspeed) {
       int pidout = floor(pid.getPIDterm(lcm, rcm));
       if (pidout > 0) {
         umouse.setPWM(fspeed, fspeed + pidout);
-      } else {
+      } 
+      else {
         umouse.setPWM(fspeed - pidout, fspeed);
       }
-    } else {
+    } 
+    else {
       umouse.setPWM(fspeed, fspeed);
     }
   }
   umouse.brake();
 }
 
+/* Where all the moving happens! */
 int moveFromTo(int row, int col, int dir, int nextRow, int nextCol){
   int nextDir = row == nextRow? (col > nextCol ? SOUTH:NORTH) : 
   (row > nextRow ? WEST:EAST);
-  
+
   if (dir == nextDir) {
-    //driveForward(10*edgePerSq, 20); 
+    driveForward(1*edgePerSq, 20); 
     Serial.println("Moving forward");
-  } else if (((dir == 1) && (nextDir == 8)) || (dir >> 1 == nextDir)) {
-   Serial.println("Moving left");
-  } else if (((dir == 8) && (nextDir == 1)) || ((dir << 1) == nextDir)) {
+  } 
+  else if (((dir == 1) && (nextDir == 8)) || (dir >> 1 == nextDir)) {
+    turn(90);
+    Serial.println("Moving left");
+  } 
+  else if (((dir == 8) && (nextDir == 1)) || ((dir << 1) == nextDir)) {
+    turn(-90);
     Serial.println("Turning right");
-  } else if ((dir + nextDir) == 5 || (dir + nextDir) == 10) {
+  } 
+  else if ((dir + nextDir) == 5 || (dir + nextDir) == 10) {
+    turn(180);
     Serial.println("Turn around");
   }
-  
+
   return nextDir;
 }
 
@@ -275,6 +376,10 @@ void setup() {
   Serial.begin(9600);
   returnState = false;
   curDir = NORTH;
+  isRunning = true;
+
+  pinMode(switchPin, OUTPUT);
+
   initializeThings();
 }
 
@@ -283,94 +388,114 @@ void initializeThings() {
   curRun = readMazeFromMem();
   //curRun = 0;
   initializeFloodfill(returnState);
+  calc(7,7,returnState, 15);
+  while (true) {
+    Serial.println("bob");
+  }
   if (DEBUG) { 
     printMazeInfo(0,0); 
   }
 }
 
 void loop() {
-  //Check for goal state
-  if (getFFScore(x, y) == 0) {
-    returnState = !returnState;
-    if (returnState) {
-      Serial.println("FLIP");
-      flipFFScore(returnState);
-      //calc(0,0,returnState, 3);
-      Serial.println("done");
-    } 
-    else { //this is where we've completed one run.
-      curRun++;
-      writeMazeToMem(curRun);
-      initializeFloodfill(returnState);
-    }
+  sw = digitalRead(10);
+  if (sw == LOW) { 
+    isRunning = true; 
   }
+  if (sw && isRunning) {
+    Serial.print("is running");
 
-  walls = getWalls(x,y); 
-  newWalls = 0;
-
-  //  //If only one possible move, move.s
-  //  if ((ALLWALLS - walls) == curDir || ((ALLWALLS - walls) << 2) == curDir) {
-  //    Serial.println("Can only move straight");
-  //    getAdjacentCell(x, y, curDir);
-  //    moveTo(x, y, curDir);
-  //    return;
-  //  } 
-
-  if (DEBUG) {
-    Serial.println("In:");
-    delay(3000);
-    if (Serial.available() > 0) {
-      char incomingBytes[2];
-      Serial.readBytesUntil('\n', incomingBytes, 2);
-      int incomingVal = atoi(incomingBytes);
-      if (incomingVal > 0 && incomingVal <= 15)
-        newWalls = incomingVal;
-    } 
-  } 
-  else if (!DEBUG) {
-    //sense what walls are surrounding the mouse
-    newWalls = senseWalls(curDir);
-  }
-
-  //if they differ, from what we know, then we've found new walls
-  if (newWalls > walls) {
-    addNewWalls(x, y, newWalls);
-    updateFloodfill(x, y, newWalls-walls, returnState, 15);
-  }
-
-  if (DEBUG) { 
-    printMazeInfo(x,y); 
-  }
-  
-  val = getFFScore(x,y);
-  //TIP: For first steps, go straight until there is more than one option. Then start updating floodfill.
-  //See what the options are
-  for (int pow = curRun + 3; pow >= curRun; pow--) { //check the four directions
-    dir = 1<<(pow%4);
-    hasWall = wallExists(x, y, dir);
-    row = x; 
-    col = y;
-    if (!hasWall) {
-      getAdjacentCell(row, col, dir);
-      nextVal = getFFScore(row, col);
-      // Go straight if tie and if possible or set to smallest value
-      if (val > nextVal) {//val == nextVal && dir == curDir || 
-        nextRow = row;
-        nextCol = col;
-        nextVal = val;
+    //Check for goal state
+    if (getFFScore(x, y) == 0) {
+      returnState = !returnState;
+      if (returnState) {
+        curRun++;
+        writeMazeToMem(curRun);
+        isRunning = false;
+//        x = 0;
+//        y = 0;
+//        curDir = 1;
+        return;
+//        Serial.println("FLIP");
+//        flipFFScore(returnState);
+//        //calc(0,0,returnState, 3);
+//        Serial.println("done");
+      } 
+      else { //this is where we've completed one run.
+        curRun++;
+        writeMazeToMem(curRun);
+        initializeFloodfill(returnState);
       }
     }
+
+    walls = getWalls(x,y); 
+    newWalls = 0;
+
+    //  //If only one possible move, move.s
+    //  if ((ALLWALLS - walls) == curDir || ((ALLWALLS - walls) << 2) == curDir) {
+    //    Serial.println("Can only move straight");
+    //    getAdjacentCell(x, y, curDir);
+    //    moveTo(x, y, curDir);
+    //    return;
+    //  } 
+
+    if (DEBUG) {
+      Serial.println("In:");
+      delay(3000);
+      if (Serial.available() > 0) {
+        char incomingBytes[2];
+        Serial.readBytesUntil('\n', incomingBytes, 2);
+        int incomingVal = atoi(incomingBytes);
+        if (incomingVal > 0 && incomingVal <= 15)
+          newWalls = incomingVal;
+      } 
+    } 
+    else if (!DEBUG) {
+      //sense what walls are surrounding the mouse
+      newWalls = senseWalls(curDir);
+    }
+
+    //if they differ, from what we know, then we've found new walls
+    if (newWalls > walls) {
+      addNewWalls(x, y, newWalls);
+      updateFloodfill(x, y, newWalls-walls, returnState, 15);
+      calc(x,y,returnState, 15);
+    }
+
+    if (DEBUG) { 
+      printMazeInfo(x,y); 
+    }
+
+    val = getFFScore(x,y);
+    //TIP: For first steps, go straight until there is more than one option. Then start updating floodfill.
+    //See what the options are
+    for (int pow = curRun + 3; pow >= curRun; pow--) { //check the four directions
+      dir = 1<<(pow%4);
+      hasWall = wallExists(x, y, dir);
+      row = x; 
+      col = y;
+      if (!hasWall) {
+        getAdjacentCell(row, col, dir);
+        nextVal = getFFScore(row, col);
+        // Go straight if tie and if possible or set to smallest value
+        if (val > nextVal) {//val == nextVal && dir == curDir || 
+          nextRow = row;
+          nextCol = col;
+          nextVal = val;
+        }
+      }
+    }
+    curDir = moveFromTo(x,y, curDir, nextRow, nextCol);
+
+    x = nextRow; 
+    y = nextCol;
+    Serial.print("Heading to: ");
+    Serial.print(x);
+    Serial.print(",");
+    Serial.println(y);
   }
-  curDir = moveFromTo(x,y, curDir, nextRow, nextCol);
-  
-  x = nextRow; 
-  y = nextCol;
-  Serial.print("Heading to: ");
-  Serial.print(x);
-  Serial.print(",");
-  Serial.println(y);
-  
 }
+
 
 
 

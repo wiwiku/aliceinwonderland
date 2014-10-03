@@ -28,26 +28,28 @@ const int frontright = A2;
 const int diagright = A1;
 const int right = A0;
 int irThSide = 15;
-int irThDiag = 10;
+int irThDiag = 15;
 int irThFront = 15;
 
-const float lc1 = 1024;
-const float lc2 = -0.775;
-const float dlc1 = 1152;
-const float dlc2 = -0.95;
-const float flc1 = 1477.6;
-const float flc2 = -0.934;
-const float frc1 = 1093.6;
-const float frc2 = -0.654;
-const float drc1 = 1205;
-const float drc2 = -0.795;
-const float rc1 = 970.86;
-const float rc2 = -0.833;
+const float lc1 = 981.58;
+const float lc2 = -1.07;
+const float dlc1 = 1071.6;
+const float dlc2 = -1.138;
+const float flc1 = 1186.7;
+const float flc2 = -1.057;
+const float frc1 = 1084;
+const float frc2 = -0.95;
+const float drc1 = 1163.4;
+const float drc2 = -1.112;
+const float rc1 = 1092.7;
+const float rc2 = -1.175;
 
 // Speed (Analog)
 const int dwheelmm = 32;
 const int leftwheel = 0; // D2 pin (interrupt 0)
 const int rightwheel = 1; // D3 pin (interrupt 1)
+
+const int edgePerSq = 51;
 
 // Drive (Digital)
 const int ain1 =  7;
@@ -58,13 +60,17 @@ const int bin2 =  12;
 const int pwmb =  6;
 
 const int forwardSpeed = 10;
+const int backwardSpeed = 10;
 
 // PID
-const float kp = 0.3;
-const float kd = 0.1;
+const float kp = 2.5;
+const float kd = 0.15;
+// 0.3 0.1
 
 // *** Variables ***
-volatile unsigned long edge = 0;
+volatile unsigned long ledge = 0;
+volatile unsigned long redge = 0;
 
 
 #endif
+

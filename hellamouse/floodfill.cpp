@@ -223,7 +223,7 @@ void updateFloodfill(int x, int y, int newWalls, boolean returnState, int initSi
   if(newWallExists(newWalls, SOUTH) || getFFScore(x, y-1) == UNDEFINED) {
     pushIfValid(x, y-1);
   }
-  calculateFFValues(x, y, returnState, initSides);
+  //calculateFFValues(x, y, returnState, initSides);
 }
 
 /* Initial starting maze values */
@@ -242,7 +242,7 @@ void initializeFloodfill(boolean returnState) {
 
   //set the initial cell values
   updateFloodfill(7, 7, 12, returnState, 15);
-  //calculateFFValues(7,7,returnState, 15);
+//  calculateFFValues(7,7,returnState, 15);
 }
 
 /* Sets (0,0) to be the goal state and recalculates floodfill values */
@@ -254,6 +254,8 @@ void flipFFScore(boolean returnState) {
   }
   setFFScore(0,0,0);
   updateFloodfill(0,0,3, returnState, 3);
+  
+  calculateFFValues(0,0,returnState, 3);
 }
 
 /* Read values stored in EEPROM */

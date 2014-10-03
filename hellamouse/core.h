@@ -1,4 +1,4 @@
-sconst int DEBUG = 1;
+const int DEBUG = 1;
 const int LENGTH = 16;
 
 const int NORTH = 1;

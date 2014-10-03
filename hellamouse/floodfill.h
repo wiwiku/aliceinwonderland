@@ -14,6 +14,7 @@ void flipFFScore(boolean returnState);
 void pushIfValid(int x, int y);
 int readMazeFromMem();
 void writeMazeToMem(int curRun);
+int smallNeigh(int row, int col, boolean returnState);
 
 // Queue accessor methods for debugging
 boolean qEmpty();
